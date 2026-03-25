@@ -1,0 +1,121 @@
+@use '@angular/material' as mat;
+
+// ── Material Theme ────────────────────────────────────────────────────────
+html {
+  height: 100%;
+  @include mat.theme((
+    color: (
+      primary: mat.$green-palette,
+      tertiary: mat.$cyan-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+// ── Custom Design Tokens ──────────────────────────────────────────────────
+:root {
+  // Colors – primary green
+  --color-primary:        #22c55e;
+  --color-primary-light:  #4ade80;
+  --color-primary-dark:   #16a34a;
+
+  // Radii
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
+  --radius-full: 999px;
+
+  // Glass (default: dark)
+  --glass-blur:      18px;
+  --glass-bg:        rgba(255, 255, 255, 0.05);
+  --glass-bg-nav:    rgba(10, 15, 12, 0.85);
+  --glass-border:    rgba(255, 255, 255, 0.12);
+  --glass-shadow:    0 8px 32px rgba(0, 0, 0, 0.35);
+
+  // Surface colors (dark default)
+  --color-bg:              #0a0f0c;
+  --color-surface:         #111a14;
+  --color-surface-elevated:#182117;
+  --color-on-surface:      #e8f5e9;
+  --color-on-surface-muted:#7ea285;
+
+  // Transitions
+  --transition-fast:  150ms ease;
+  --transition-base:  250ms ease;
+  --transition-slow:  400ms ease;
+}
+
+// Light theme overrides
+[data-theme="light"] {
+  --glass-bg:          rgba(255, 255, 255, 0.65);
+  --glass-bg-nav:      rgba(240, 255, 244, 0.92);
+  --glass-border:      rgba(0, 0, 0, 0.10);
+  --glass-shadow:      0 8px 32px rgba(0, 0, 0, 0.12);
+
+  --color-bg:              #f0fdf4;
+  --color-surface:         #ffffff;
+  --color-surface-elevated:#e8f5ed;
+  --color-on-surface:      #0d1f12;
+  --color-on-surface-muted:#4a7a5a;
+}
+
+// ── Global Resets ─────────────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-on-surface);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme="light"] body { color-scheme: light; }
+
+// ── Scrollbar ─────────────────────────────────────────────────────────────
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 2px;
+}
+
+// ── Page scaffold helper ─────────────────────────────────────────────────
+.page-scroll {
+  min-height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.safe-bottom {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
+}
+
+// ── Focus visible ─────────────────────────────────────────────────────────
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+// ── Reduce motion ─────────────────────────────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+}
+
+// ── Material overrides ────────────────────────────────────────────────────
+.mdc-slider { --mdc-slider-active-track-color: var(--color-primary); }
+.mat-mdc-slide-toggle.mat-accent { --mdc-switch-selected-track-color: var(--color-primary); }
+

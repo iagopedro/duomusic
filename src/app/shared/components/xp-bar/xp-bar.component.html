@@ -1,0 +1,14 @@
+
+    <div class="xp-bar" [attr.aria-label]="ariaLabel" role="progressbar"
+         [attr.aria-valuenow]="current" [attr.aria-valuemin]="0" [attr.aria-valuemax]="max">
+      <div class="xp-bar__track">
+        <div
+          class="xp-bar__fill"
+          [style.width.%]="percentage"
+        ></div>
+      </div>
+      <div class="xp-bar__labels" *ngIf="showLabels">
+        <span class="xp-bar__current">{{ current }} XP</span>
+        <span class="xp-bar__max">{{ max }} XP</span>
+      </div>
+    </div>

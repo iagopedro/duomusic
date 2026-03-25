@@ -1,0 +1,50 @@
+
+    <div class="onboarding" [style.background]="currentStep().gradient">
+      <!-- Skip button -->
+      <button class="onboarding__skip" (click)="finish()" [attr.aria-label]="i18n.t('onboarding.skip')">
+        {{ i18n.t('onboarding.skip') }}
+      </button>
+
+      <!-- Illustration area -->
+      <div class="onboarding__illustration-area">
+        <div class="onboarding__illustration" [@slideIn]="currentIndex()">
+          <div class="onboarding__glow"></div>
+          <span class="onboarding__emoji">{{ currentStep().illustration }}</span>
+        </div>
+      </div>
+
+      <!-- Card area -->
+      <app-glass-panel class="onboarding__card-wrap" padding="2rem">
+        <div class="onboarding__card" [@slideIn]="currentIndex()">
+          <h1 class="onboarding__title">{{ stepTitle() }}</h1>
+          <p class="onboarding__desc">{{ stepDesc() }}</p>
+        </div>
+
+        <!-- Dots -->
+        <div class="onboarding__dots" [attr.aria-label]="i18n.t('onboarding.aria.step', { n: currentIndex() + 1, total: steps.length })">
+          <button
+            *ngFor="let s of steps; let idx = index; trackBy: trackByIndex"
+            class="onboarding__dot"
+            [class.onboarding__dot--active]="idx === currentIndex()"
+            [attr.aria-label]="'Passo ' + (idx + 1)"
+            (click)="goTo(idx)"
+          ></button>
+        </div>
+
+        <!-- Actions -->
+        <div class="onboarding__actions">
+          <app-primary-button
+            *ngIf="!isLast()"
+            (clicked)="next()"
+            [ariaLabel]="i18n.t('onboarding.next')"
+          >{{ i18n.t('onboarding.next') }}</app-primary-button>
+
+          <app-primary-button
+            *ngIf="isLast()"
+            size="lg"
+            (clicked)="finish()"
+            [ariaLabel]="i18n.t('onboarding.cta')"
+          >{{ i18n.t('onboarding.cta') }}</app-primary-button>
+        </div>
+      </app-glass-panel>
+    </div>

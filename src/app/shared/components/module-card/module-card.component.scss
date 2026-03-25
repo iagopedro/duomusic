@@ -1,0 +1,95 @@
+
+    .module-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: var(--radius-lg);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      position: relative;
+      overflow: hidden;
+      min-height: 72px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: var(--card-color);
+        border-radius: 4px 0 0 4px;
+      }
+
+      &:not(.module-card--locked):hover,
+      &:not(.module-card--locked):focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px color-mix(in srgb, var(--card-color) 20%, transparent);
+        outline: none;
+      }
+
+      &--locked {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      &__icon-wrap {
+        position: relative;
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--card-color) 18%, transparent);
+      }
+
+      &__icon {
+        color: var(--card-color);
+        font-size: 22px;
+      }
+
+      &__lock, &__check {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        font-size: 16px;
+        background: var(--color-surface);
+        border-radius: 50%;
+      }
+      &__lock { color: var(--color-on-surface-muted); }
+      &__check { color: #22c55e; }
+
+      &__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      &__name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--color-on-surface);
+      }
+
+      &__desc {
+        font-size: 0.78rem;
+        color: var(--color-on-surface-muted);
+        line-height: 1.4;
+      }
+
+      &__status {
+        font-size: 0.72rem;
+        color: var(--color-on-surface-muted);
+        &--done { color: #22c55e; }
+      }
+
+      &__arrow {
+        color: var(--color-on-surface-muted);
+        flex-shrink: 0;
+      }
+    }

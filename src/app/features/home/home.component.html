@@ -1,0 +1,90 @@
+
+    <div class="home page-scroll">
+      <!-- Header / Level card -->
+      <app-glass-panel class="home__hero" padding="1.5rem">
+        <div class="home__greeting">{{ i18n.t('home.greeting') }}</div>
+        <div class="home__level-row">
+          <div class="home__level-badge">
+            <span class="home__level-label">{{ i18n.t('home.level', { n: level() }) }}</span>
+          </div>
+          <div class="home__streak" [attr.aria-label]="i18n.t('home.streak.label')">
+            <mat-icon aria-hidden="true">local_fire_department</mat-icon>
+            <span>{{ i18n.t('home.streak', { n: streak() }) }}</span>
+          </div>
+        </div>
+        <app-xp-bar
+          [current]="xpInLevel()"
+          [max]="xpForNext()"
+          [showLabels]="true"
+          [ariaLabel]="i18n.t('home.xp.next', { xp: xpForNext() - xpInLevel() })"
+        />
+        <div class="home__xp-hint">
+          {{ i18n.t('home.xp.next', { xp: xpForNext() - xpInLevel() }) }}
+        </div>
+      </app-glass-panel>
+
+      <!-- Daily Missions -->
+      <section class="home__section" *ngIf="missions().length">
+        <h2 class="home__section-title">{{ i18n.t('home.missions.title') }}</h2>
+        <div class="home__missions-list">
+          <app-glass-panel
+            *ngFor="let m of missions(); trackBy: trackById"
+            class="home__mission"
+            padding="0.875rem 1rem"
+          >
+            <div class="home__mission-inner">
+              <mat-icon class="home__mission-icon" [class.done]="m.completed">
+                {{ m.completed ? 'check_circle' : 'radio_button_unchecked' }}
+              </mat-icon>
+              <div class="home__mission-text">
+                <span class="home__mission-desc">{{ m.descriptionKey }}</span>
+                <span class="home__mission-progress">{{ m.current }}/{{ m.target }}</span>
+              </div>
+              <span class="home__mission-xp">+{{ m.xpReward }} XP</span>
+            </div>
+          </app-glass-panel>
+        </div>
+      </section>
+
+      <!-- Recent badges -->
+      <section class="home__section" *ngIf="recentBadges().length">
+        <h2 class="home__section-title">{{ i18n.t('home.badges.title') }}</h2>
+        <div class="home__badges-row">
+          <app-badge-chip
+            *ngFor="let b of recentBadges(); trackBy: trackById"
+            [achievement]="b"
+            [locked]="false"
+          />
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <div class="home__cta-row">
+        <app-primary-button
+          size="lg"
+          (clicked)="continuePractice()"
+          style="width: 100%"
+          [ariaLabel]="i18n.t('home.cta')"
+        >
+          <mat-icon aria-hidden="true">play_arrow</mat-icon>
+          {{ i18n.t('home.cta') }}
+        </app-primary-button>
+      </div>
+
+      <!-- Modules list -->
+      <section class="home__section">
+        <h2 class="home__section-title">{{ i18n.t('home.modules.title') }}</h2>
+        <div class="home__modules-list">
+          <app-module-card
+            *ngFor="let mod of modules; trackBy: trackByModuleId"
+            [module]="mod"
+            [locked]="!isUnlocked(mod)"
+            [completed]="isCompleted(mod)"
+            (cardClicked)="openModule($event)"
+          />
+        </div>
+      </section>
+
+      <!-- Safe area bottom spacer -->
+      <div class="safe-bottom"></div>
+    </div>

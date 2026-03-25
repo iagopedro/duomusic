@@ -1,0 +1,100 @@
+
+    .home {
+      padding: 1rem 1rem 0;
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+
+      &__hero {
+        display: block;
+      }
+
+      &__greeting {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-on-surface);
+        margin-bottom: 0.75rem;
+      }
+
+      &__level-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+      }
+
+      &__level-badge {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+        color: #fff;
+        padding: 0.3rem 0.85rem;
+        border-radius: var(--radius-full);
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      &__streak {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #f59e0b;
+        font-size: 0.9rem;
+        font-weight: 600;
+        mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      }
+
+      &__xp-hint {
+        font-size: 0.75rem;
+        color: var(--color-on-surface-muted);
+        margin-top: 4px;
+        text-align: right;
+      }
+
+      &__section { display: flex; flex-direction: column; gap: 0.5rem; }
+
+      &__section-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-on-surface-muted);
+        margin: 0;
+      }
+
+      &__missions-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+      &__mission { display: block; }
+      &__mission-inner {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      &__mission-icon {
+        color: var(--color-on-surface-muted);
+        flex-shrink: 0;
+        &.done { color: #22c55e; }
+      }
+      &__mission-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      &__mission-desc { font-size: 0.875rem; color: var(--color-on-surface); }
+      &__mission-progress { font-size: 0.75rem; color: var(--color-on-surface-muted); }
+      &__mission-xp {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--color-primary);
+      }
+
+      &__badges-row {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      &__cta-row { display: flex; }
+
+      &__modules-list { display: flex; flex-direction: column; gap: 0.625rem; }
+    }

@@ -1,0 +1,10 @@
+
+    <div
+      class="badge-chip"
+      [class.badge-chip--locked]="locked"
+      [attr.aria-label]="achievement.titleKey + (locked ? ' — bloqueado' : ' — conquistado')"
+      role="img"
+    >
+      <span class="badge-chip__icon" [attr.aria-hidden]="true">{{ achievement.icon }}</span>
+      <span class="badge-chip__name">{{ achievement.titleKey }}</span>
+    </div>

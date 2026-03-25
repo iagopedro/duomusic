@@ -1,0 +1,15 @@
+
+    <button
+      class="primary-btn"
+      [class.primary-btn--secondary]="variant === 'secondary'"
+      [class.primary-btn--outline]="variant === 'outline'"
+      [class.primary-btn--sm]="size === 'sm'"
+      [class.primary-btn--lg]="size === 'lg'"
+      [disabled]="disabled"
+      [attr.aria-label]="ariaLabel || null"
+      matRipple
+      [matRippleDisabled]="disabled"
+      (click)="clicked.emit($event)"
+    >
+      <ng-content />
+    </button>

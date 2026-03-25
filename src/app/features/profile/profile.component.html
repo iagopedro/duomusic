@@ -1,0 +1,90 @@
+
+    <div class="profile page-scroll">
+      <header class="profile__header">
+        <h1 class="profile__title">{{ i18n.t('profile.title') }}</h1>
+      </header>
+
+      <!-- Stats -->
+      <section class="profile__section">
+        <h2 class="profile__section-title">{{ i18n.t('profile.stats.title') }}</h2>
+        <app-glass-panel padding="1.25rem">
+          <div class="profile__stats-grid">
+            <div class="profile__stat">
+              <span class="profile__stat-icon">🎯</span>
+              <span class="profile__stat-val">{{ i18n.t('profile.stats.accuracy_value', { n: accuracy() }) }}</span>
+              <span class="profile__stat-label">{{ i18n.t('profile.stats.accuracy') }}</span>
+            </div>
+            <div class="profile__stat">
+              <span class="profile__stat-icon">📋</span>
+              <span class="profile__stat-val">{{ exerciseCount() }}</span>
+              <span class="profile__stat-label">{{ i18n.t('profile.stats.exercises') }}</span>
+            </div>
+            <div class="profile__stat">
+              <span class="profile__stat-icon">⏱️</span>
+              <span class="profile__stat-val">{{ i18n.t('profile.stats.time_value', { n: practiceMinutes() }) }}</span>
+              <span class="profile__stat-label">{{ i18n.t('profile.stats.time') }}</span>
+            </div>
+            <div class="profile__stat">
+              <span class="profile__stat-icon">🔥</span>
+              <span class="profile__stat-val">{{ streak() }}</span>
+              <span class="profile__stat-label">{{ i18n.t('profile.stats.streak') }}</span>
+            </div>
+            <div class="profile__stat">
+              <span class="profile__stat-icon">⭐</span>
+              <span class="profile__stat-val">{{ xp() }}</span>
+              <span class="profile__stat-label">{{ i18n.t('profile.stats.xp_total') }}</span>
+            </div>
+          </div>
+        </app-glass-panel>
+      </section>
+
+      <!-- Settings -->
+      <section class="profile__section">
+        <h2 class="profile__section-title">{{ i18n.t('profile.settings.title') }}</h2>
+        <app-glass-panel padding="1.25rem">
+          <div class="profile__settings-list">
+            <!-- Volume -->
+            <div class="profile__setting">
+              <div class="profile__setting-label">
+                <mat-icon aria-hidden="true">volume_up</mat-icon>
+                <span>{{ i18n.t('profile.settings.volume') }}</span>
+              </div>
+              <mat-slider min="0" max="1" step="0.05" [attr.aria-label]="i18n.t('profile.settings.volume')">
+                <input matSliderThumb
+                  [value]="volume()"
+                  (valueChange)="onVolumeChange($event)"
+                />
+              </mat-slider>
+            </div>
+
+            <!-- Reduce animations -->
+            <div class="profile__setting profile__setting--toggle">
+              <div class="profile__setting-label">
+                <mat-icon aria-hidden="true">animation</mat-icon>
+                <span>{{ i18n.t('profile.settings.reduce_animations') }}</span>
+              </div>
+              <mat-slide-toggle
+                [checked]="reduceAnimations()"
+                (change)="onReduceAnimations($event.checked)"
+                [attr.aria-label]="i18n.t('profile.settings.reduce_animations')"
+              />
+            </div>
+
+            <!-- Dark theme -->
+            <div class="profile__setting profile__setting--toggle">
+              <div class="profile__setting-label">
+                <mat-icon aria-hidden="true">dark_mode</mat-icon>
+                <span>{{ i18n.t('profile.settings.theme') }}</span>
+              </div>
+              <mat-slide-toggle
+                [checked]="darkTheme()"
+                (change)="onDarkTheme($event.checked)"
+                [attr.aria-label]="i18n.t('profile.settings.theme')"
+              />
+            </div>
+          </div>
+        </app-glass-panel>
+      </section>
+
+      <div class="safe-bottom"></div>
+    </div>

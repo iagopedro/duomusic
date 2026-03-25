@@ -1,0 +1,64 @@
+
+    .achievements {
+      padding: 1rem 1rem 0;
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+
+      &__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      &__title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--color-on-surface);
+      }
+
+      &__progress {
+        font-size: 0.8rem;
+        color: var(--color-on-surface-muted);
+      }
+
+      &__summary { display: block; }
+      &__summary-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+      }
+      &__summary-val {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        line-height: 1;
+      }
+      &__summary-label {
+        font-size: 0.85rem;
+        color: var(--color-on-surface-muted);
+        margin-bottom: 0.25rem;
+      }
+      &__summary-bar {
+        height: 8px;
+        background: var(--glass-border);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+      }
+      &__summary-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+        border-radius: var(--radius-full);
+        transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+      }
+
+      &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        gap: 0.75rem;
+      }
+    }

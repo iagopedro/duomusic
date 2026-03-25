@@ -1,0 +1,31 @@
+
+    <div class="achievements page-scroll">
+      <header class="achievements__header">
+        <h1 class="achievements__title">{{ i18n.t('achievements.title') }}</h1>
+        <span class="achievements__progress">
+          {{ i18n.t('achievements.progress', { n: earnedCount(), total: total() }) }}
+        </span>
+      </header>
+
+      <div class="achievements__summary">
+        <app-glass-panel padding="1rem 1.25rem">
+          <div class="achievements__summary-inner">
+            <span class="achievements__summary-val">{{ earnedCount() }}</span>
+            <span class="achievements__summary-label">de {{ total() }} conquistados</span>
+            <div class="achievements__summary-bar">
+              <div class="achievements__summary-fill" [style.width.%]="percentage()"></div>
+            </div>
+          </div>
+        </app-glass-panel>
+      </div>
+
+      <div class="achievements__grid">
+        <app-badge-chip
+          *ngFor="let a of allAchievements; trackBy: trackById"
+          [achievement]="a"
+          [locked]="!isEarned(a.id)"
+        />
+      </div>
+
+      <div class="safe-bottom"></div>
+    </div>
