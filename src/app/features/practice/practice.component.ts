@@ -264,9 +264,13 @@ export class PracticeComponent implements OnInit, OnDestroy {
               this.countdown.set(-1); // esconde overlay antes de iniciar o ritmo
 
               const startTime = Date.now();
+              // Compensa a latência do dispositivo de áudio (Bluetooth pode ter 150–300 ms).
+              // Sem isso, o usuário toca no momento em que OUVE o beat, mas o tempo de
+              // referência foi gravado antes do som chegar ao fone, resultando em "sempre atrasado".
+              const latencyMs = this.audio.getOutputLatencyMs();
               let cumulative = 0;
               this.rhythmExpectedTimes = ex.pattern.map((note) => {
-                const time = startTime + cumulative;
+                const time = startTime + cumulative + latencyMs;
                 cumulative += this.noteDurationMs(note, msBeat);
                 return time;
               });

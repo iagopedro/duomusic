@@ -17,6 +17,23 @@ export class AudioService {
     return this.ctx;
   }
 
+  /**
+   * Offset mínimo de agendamento em segundos, que inclui:
+   * - outputLatency: latência do dispositivo de saída (Bluetooth pode ser 150–300 ms)
+   * - baseLatency: latência de processamento do AudioContext
+   * Um mínimo de 50 ms é mantido para garantir que o buffer nunca seja descartado.
+   */
+  private scheduleOffset(): number {
+    const ctx = this.getCtx();
+    const output = (ctx as AudioContext & { outputLatency?: number }).outputLatency ?? 0;
+    return Math.max(output + ctx.baseLatency, 0.05);
+  }
+
+  /** Expõe a latência de saída em milissegundos (usado para calibrar o ritmo). */
+  getOutputLatencyMs(): number {
+    return this.scheduleOffset() * 1000;
+  }
+
   private getMaster(): GainNode {
     this.getCtx();
     return this.masterGain!;
@@ -37,7 +54,12 @@ export class AudioService {
     }
   }
 
-  playTone(freq: number, durationMs: number, type: OscillatorType = 'sine'): void {
+  /**
+   * Toca um tom sintético.
+   * @param startAt Instante de início em segundos (AudioContext time). Se omitido,
+   *                usa currentTime + scheduleOffset() para compensar latência Bluetooth.
+   */
+  playTone(freq: number, durationMs: number, type: OscillatorType = 'sine', startAt?: number): void {
     const ctx = this.getCtx();
     const osc = ctx.createOscillator();
     const envGain = ctx.createGain();
@@ -45,7 +67,7 @@ export class AudioService {
     osc.type = type;
     osc.frequency.value = freq;
 
-    const now = ctx.currentTime;
+    const now = startAt ?? (ctx.currentTime + this.scheduleOffset());
     const dur = durationMs / 1000;
 
     // Simple ADSR envelope
@@ -63,18 +85,23 @@ export class AudioService {
 
   playInterval(rootFreq: number, semitones: number, durationMs = 1000): void {
     const upper = rootFreq * Math.pow(2, semitones / 12);
-    this.playTone(rootFreq, durationMs);
     const ctx = this.getCtx();
-    // Play upper note after a brief gap
-    setTimeout(() => this.playTone(upper, durationMs), durationMs + 150);
+    // Agenda ambas as notas pelo scheduler do Web Audio para manter sincronismo
+    // mesmo em dispositivos Bluetooth de alta latência.
+    const start = ctx.currentTime + this.scheduleOffset();
+    const dur = durationMs / 1000;
+    this.playTone(rootFreq, durationMs, 'sine', start);
+    this.playTone(upper, durationMs, 'sine', start + dur + 0.15);
   }
 
   playChord(rootFreq: number, chordType: ChordType, durationMs = 1500): void {
     const intervals = this.chordIntervals(chordType);
+    const ctx = this.getCtx();
+    // Strum agendado via Web Audio clock em vez de setTimeout
+    const start = ctx.currentTime + this.scheduleOffset();
     intervals.forEach((semi, idx) => {
       const freq = rootFreq * Math.pow(2, semi / 12);
-      // Slight strum delay for each note
-      setTimeout(() => this.playTone(freq, durationMs, 'sine'), idx * 30);
+      this.playTone(freq, durationMs, 'sine', start + idx * 0.03);
     });
   }
 
