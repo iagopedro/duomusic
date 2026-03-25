@@ -1,35 +1,65 @@
 import { Injectable } from '@angular/core';
 import { ChordType, OscillatorType } from '../models';
 
+/**
+ * Lookahead mínimo de agendamento.
+ * 200 ms garante que o buffer Bluetooth A2DP esteja preenchido antes da reprodução.
+ * Dispositivos BT desconnectam o pipe de áudio no silêncio e precisam de tempo
+ * para reconectar; valores abaixo de 150 ms resultam em áudio descartado.
+ */
+const MIN_LOOKAHEAD_S = 0.2;
+
 @Injectable({ providedIn: 'root' })
 export class AudioService {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
+  private keepAliveOsc: OscillatorNode | null = null;
   private _volume = 0.7;
 
   private getCtx(): AudioContext {
     if (!this.ctx || this.ctx.state === 'closed') {
-      this.ctx = new AudioContext();
+      // 'playback' prioriza continuidade do áudio sobre baixa latência,
+      // evitando underruns no pipeline Bluetooth.
+      this.ctx = new AudioContext({ latencyHint: 'playback' });
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.value = this._volume;
       this.masterGain.connect(this.ctx.destination);
+      this.startKeepAlive();
     }
     return this.ctx;
   }
 
   /**
-   * Offset mínimo de agendamento em segundos, que inclui:
-   * - outputLatency: latência do dispositivo de saída (Bluetooth pode ser 150–300 ms)
-   * - baseLatency: latência de processamento do AudioContext
-   * Um mínimo de 50 ms é mantido para garantir que o buffer nunca seja descartado.
+   * Tom inaudível contínuo (20 Hz, ganho ~0) que mantém o pipe de áudio Bluetooth
+   * aberto durante os silêncios entre exercícios.
+   * Sem isso, o device BT "dorme" e o primeiro som de cada sequência é descartado
+   * enquanto a conexão A2DP é reestabelecida (~200–500 ms de delay).
+   */
+  private startKeepAlive(): void {
+    if (!this.ctx || this.keepAliveOsc) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    gain.gain.value = 0.00001; // inaudível
+    osc.frequency.value = 20;  // abaixo do limiar auditivo
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    this.keepAliveOsc = osc;
+  }
+
+  /**
+   * Calcula o offset de agendamento em segundos.
+   * Usa o maior entre o outputLatency reportado e o MIN_LOOKAHEAD_S.
+   * NOTA: outputLatency costuma ser 0 em BT apesar da latência real de 150–300 ms;
+   * por isso MIN_LOOKAHEAD_S = 200 ms é o valor de segurança.
    */
   private scheduleOffset(): number {
     const ctx = this.getCtx();
-    const output = (ctx as AudioContext & { outputLatency?: number }).outputLatency ?? 0;
-    return Math.max(output + ctx.baseLatency, 0.05);
+    const reported = (ctx as AudioContext & { outputLatency?: number }).outputLatency ?? 0;
+    return Math.max(reported + ctx.baseLatency, MIN_LOOKAHEAD_S);
   }
 
-  /** Expõe a latência de saída em milissegundos (usado para calibrar o ritmo). */
+  /** Latência de saída em milissegundos (usada para calibrar o timing do ritmo). */
   getOutputLatencyMs(): number {
     return this.scheduleOffset() * 1000;
   }
@@ -45,6 +75,8 @@ export class AudioService {
     if (ctx.state === 'suspended') {
       await ctx.resume();
     }
+    // Garante que o keep-alive está rodando após o resume
+    this.startKeepAlive();
   }
 
   setMasterVolume(value: number): void {
