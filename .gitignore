@@ -29,6 +29,10 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
+# Logs de build/test locais
+build-errors.txt
+test-results*.txt
+
 # Miscellaneous
 /.angular/cache
 .sass-cache/
