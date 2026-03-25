@@ -1,0 +1,224 @@
+
+    <div class="practice page-scroll">
+      <!-- Header -->
+      <header class="practice__header">
+        <button class="practice__back-btn" (click)="goBack()" [attr.aria-label]="i18n.t('common.back')">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <span class="practice__module-name">{{ moduleName() }}</span>
+        <span class="practice__counter" *ngIf="phase() !== 'intro' && phase() !== 'result'">
+          {{ i18n.t('practice.exercise.of', { n: currentIndex() + 1, total: exercises().length }) }}
+        </span>
+      </header>
+
+      <!-- Progress bar -->
+      <app-xp-bar
+        *ngIf="phase() !== 'intro' && phase() !== 'result'"
+        [current]="currentIndex()"
+        [max]="exercises().length"
+        [ariaLabel]="'Progresso: exercício ' + (currentIndex() + 1) + ' de ' + exercises().length"
+        class="practice__progress"
+      />
+
+      <!-- PHASE: intro -->
+      <div *ngIf="phase() === 'intro'" class="practice__phase" [@fadeSlide]>
+        <app-glass-panel class="practice__intro-card">
+          <div class="practice__intro-content">
+            <span class="practice__intro-icon">🎯</span>
+            <h1 class="practice__intro-title">{{ i18n.t('practice.intro.title') }}</h1>
+            <p class="practice__intro-desc">{{ i18n.t('practice.intro.desc') }}</p>
+            <div class="practice__intro-stats">
+              <span>{{ exercises().length }} exercícios</span>
+              <span>{{ totalXp() }} XP no total</span>
+            </div>
+            <app-primary-button
+              size="lg"
+              style="width: 100%"
+              (clicked)="startPractice()"
+              [ariaLabel]="i18n.t('practice.start')"
+            >{{ i18n.t('practice.start') }}</app-primary-button>
+          </div>
+        </app-glass-panel>
+      </div>
+
+      <!-- PHASE: exercise -->
+      <div *ngIf="phase() === 'exercise'" class="practice__phase" [@fadeSlide]>
+        <!-- Rhythm exercise -->
+        <ng-container *ngIf="currentExercise()?.type === 'rhythm'">
+          <app-glass-panel class="practice__exercise-card">
+            <h2 class="practice__q-label">{{ i18n.t('exercise.rhythm.hint') }}</h2>
+            <div class="practice__rhythm-pattern">
+              <!-- countdown overlay: each number gets its own element so :enter fires per digit -->
+              <ng-container *ngIf="countdown() >= 0">
+                <div *ngIf="countdown() === 3" class="practice__countdown" [@countdownPop]>3</div>
+                <div *ngIf="countdown() === 2" class="practice__countdown" [@countdownPop]>2</div>
+                <div *ngIf="countdown() === 1" class="practice__countdown" [@countdownPop]>1</div>
+                <div *ngIf="countdown() === 0" class="practice__countdown practice__countdown--go" [@countdownPop]>GO!</div>
+              </ng-container>
+              <div
+                *ngFor="let beat of rhythmBeats(); let i = index; trackBy: trackByIndex"
+                class="practice__beat"
+                [class.practice__beat--active]="activeBeat() === i"
+                [class.practice__beat--tapped]="tappedBeats()[i]"
+                [ngClass]="'practice__beat--' + beat"
+              >
+                <span>{{ beat === 'quarter' ? '♩' : beat === 'eighth' ? '♪' : '𝄽' }}</span>
+              </div>
+            </div>
+            <div class="practice__rhythm-controls">
+              <button
+                class="practice__tap-btn"
+                [class.practice__tap-btn--active]="tapping()"
+                [disabled]="countdown() >= 0"
+                (click)="handleTap()"
+                (keydown.enter)="handleTap()"
+                (keydown.space)="handleTap()"
+                [attr.aria-label]="i18n.t('exercise.rhythm.tap')"
+              >
+                <mat-icon aria-hidden="true">touch_app</mat-icon>
+                <span>{{ i18n.t('exercise.rhythm.tap') }}</span>
+              </button>
+            </div>
+            <div class="practice__rhythm-actions">
+              <app-primary-button
+                variant="secondary"
+                [disabled]="countdown() >= 0"
+                (clicked)="startRhythm()"
+              >
+                <mat-icon aria-hidden="true">play_arrow</mat-icon>
+                {{ i18n.t('exercise.rhythm.start') }}
+              </app-primary-button>
+              <app-primary-button
+                [disabled]="tappedBeats().filter(t => t).length === 0"
+                (clicked)="submitRhythm()"
+                [ariaLabel]="i18n.t('practice.submit')"
+              >{{ i18n.t('practice.submit') }}</app-primary-button>
+            </div>
+          </app-glass-panel>
+        </ng-container>
+
+        <!-- Interval exercise -->
+        <ng-container *ngIf="currentExercise()?.type === 'interval'">
+          <app-glass-panel class="practice__exercise-card">
+            <h2 class="practice__q-label">{{ i18n.t('exercise.interval.question') }}</h2>
+            <button
+              class="practice__play-btn"
+              (click)="playCurrentExercise()"
+              [attr.aria-label]="i18n.t('practice.play.again')"
+            >
+              <mat-icon aria-hidden="true">volume_up</mat-icon>
+              {{ i18n.t('practice.play.again') }}
+            </button>
+            <div class="practice__options-grid">
+              <button
+                *ngFor="let opt of intervalOptions(); trackBy: trackByIndex"
+                class="practice__option-btn"
+                [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                (click)="selectAnswer(opt)"
+                (keydown.enter)="selectAnswer(opt)"
+                (keydown.space)="selectAnswer(opt)"
+                [attr.aria-label]="intervalLabel(opt)"
+                [attr.aria-pressed]="selectedAnswer() === opt"
+              >{{ intervalLabel(opt) }}</button>
+            </div>
+            <app-primary-button
+              [disabled]="selectedAnswer() === null"
+              style="width: 100%"
+              (clicked)="submitAnswer()"
+              [ariaLabel]="i18n.t('practice.submit')"
+            >{{ i18n.t('practice.submit') }}</app-primary-button>
+          </app-glass-panel>
+        </ng-container>
+
+        <!-- Chord exercise -->
+        <ng-container *ngIf="currentExercise()?.type === 'chord'">
+          <app-glass-panel class="practice__exercise-card">
+            <h2 class="practice__q-label">{{ i18n.t('exercise.chord.question') }}</h2>
+            <button
+              class="practice__play-btn"
+              (click)="playCurrentExercise()"
+              [attr.aria-label]="i18n.t('practice.play.again')"
+            >
+              <mat-icon aria-hidden="true">volume_up</mat-icon>
+              {{ i18n.t('practice.play.again') }}
+            </button>
+            <div class="practice__options-grid practice__options-grid--2col">
+              <button
+                *ngFor="let opt of chordOptions(); trackBy: trackByIndex"
+                class="practice__option-btn"
+                [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                (click)="selectAnswer(opt)"
+                (keydown.enter)="selectAnswer(opt)"
+                (keydown.space)="selectAnswer(opt)"
+                [attr.aria-label]="chordLabel(opt)"
+                [attr.aria-pressed]="selectedAnswer() === opt"
+              >{{ chordLabel(opt) }}</button>
+            </div>
+            <app-primary-button
+              [disabled]="selectedAnswer() === null"
+              style="width: 100%"
+              (clicked)="submitAnswer()"
+              [ariaLabel]="i18n.t('practice.submit')"
+            >{{ i18n.t('practice.submit') }}</app-primary-button>
+          </app-glass-panel>
+        </ng-container>
+      </div>
+
+      <!-- PHASE: feedback -->
+      <div *ngIf="phase() === 'feedback'" class="practice__phase" [@fadeSlide]>
+        <app-glass-panel class="practice__feedback-card" [class.correct]="lastCorrect()">
+          <div class="practice__feedback-icon" [@feedback]>
+            {{ lastCorrect() ? '🎉' : '😕' }}
+          </div>
+          <h2 class="practice__feedback-title">
+            {{ lastCorrect() ? i18n.t('practice.correct') : i18n.t('practice.wrong') }}
+          </h2>
+          <p *ngIf="explanationText()" class="practice__feedback-explanation">
+            {{ explanationText() }}
+          </p>
+          <div class="practice__feedback-xp" *ngIf="lastCorrect()">
+            {{ i18n.t('practice.xp.earned', { xp: lastXpEarned() }) }}
+          </div>
+          <div class="practice__feedback-actions">
+            <app-primary-button
+              *ngIf="!lastCorrect()"
+              variant="secondary"
+              (clicked)="retry()"
+              [ariaLabel]="i18n.t('practice.retry')"
+            >{{ i18n.t('practice.retry') }}</app-primary-button>
+            <app-primary-button
+              (clicked)="nextExercise()"
+              [ariaLabel]="isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next')"
+            >
+              {{ isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next') }}
+            </app-primary-button>
+          </div>
+        </app-glass-panel>
+      </div>
+
+      <!-- PHASE: result -->
+      <div *ngIf="phase() === 'result'" class="practice__phase" [@fadeSlide]>
+        <app-glass-panel class="practice__result-card">
+          <span class="practice__result-trophy">🏆</span>
+          <h2 class="practice__result-title">{{ i18n.t('practice.result.title') }}</h2>
+          <div class="practice__result-stats">
+            <div class="practice__result-stat">
+              <span class="practice__result-stat-value">{{ correctCount() }}</span>
+              <span class="practice__result-stat-label">{{ i18n.t('practice.result.correct', { n: correctCount() }) }}</span>
+            </div>
+            <div class="practice__result-stat">
+              <span class="practice__result-stat-value">{{ sessionXp() }}</span>
+              <span class="practice__result-stat-label">XP</span>
+            </div>
+          </div>
+          <app-primary-button
+            size="lg"
+            style="width: 100%"
+            (clicked)="goBack()"
+            [ariaLabel]="i18n.t('practice.result.back')"
+          >{{ i18n.t('practice.result.back') }}</app-primary-button>
+        </app-glass-panel>
+      </div>
+
+      <div class="safe-bottom"></div>
+    </div>
