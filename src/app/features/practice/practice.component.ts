@@ -58,6 +58,10 @@ const INTERVAL_NAMES: Record<number, string> = {
         style({ opacity: 0, transform: 'scale(0.4)' }),
         animate('300ms cubic-bezier(0.34,1.56,0.64,1)', style({ opacity: 1, transform: 'scale(1)' })),
       ]),
+      transition('* => *', [
+        style({ transform: 'scale(0.4)' }),
+        animate('300ms cubic-bezier(0.34,1.56,0.64,1)', style({ transform: 'scale(1)' })),
+      ]),
       transition(':leave', [
         animate('150ms ease-in', style({ opacity: 0, transform: 'scale(1.2)' })),
       ]),

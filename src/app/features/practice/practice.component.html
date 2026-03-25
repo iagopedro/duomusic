@@ -48,13 +48,14 @@
           <app-glass-panel class="practice__exercise-card">
             <h2 class="practice__q-label">{{ i18n.t('exercise.rhythm.hint') }}</h2>
             <div class="practice__rhythm-pattern">
-              <!-- countdown overlay: each number gets its own element so :enter fires per digit -->
-              <ng-container *ngIf="countdown() >= 0">
-                <div *ngIf="countdown() === 3" class="practice__countdown" [@countdownPop]>3</div>
-                <div *ngIf="countdown() === 2" class="practice__countdown" [@countdownPop]>2</div>
-                <div *ngIf="countdown() === 1" class="practice__countdown" [@countdownPop]>1</div>
-                <div *ngIf="countdown() === 0" class="practice__countdown practice__countdown--go" [@countdownPop]>GO!</div>
-              </ng-container>
+              <!-- countdown overlay: elemento único, apenas o texto muda -->
+              @if (countdown() >= 0) {
+                <div class="practice__countdown"
+                     [class.practice__countdown--go]="countdown() === 0"
+                     [@countdownPop]="countdown()">
+                  {{ countdown() === 0 ? 'GO!' : countdown() }}
+                </div>
+              }
               <div
                 *ngFor="let beat of rhythmBeats(); let i = index; trackBy: trackByIndex"
                 class="practice__beat"
