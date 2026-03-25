@@ -152,13 +152,34 @@ export class AudioService {
   }
 
   /**
-   * @param accent Tick acentuado (beat 0) ou tick normal.
-   * @param startAt Instante de início em segundos (Web Audio clock). Se omitido,
-   *                agenda com scheduleOffset() como lookahead — porém prefira passar
-   *                um valor explícito ao pré-agendar sequências inteiras de beats.
+   * Tick do metrônomo com envelope percussivo de 200 ms.
+   *
+   * Bluetooth A2DP codifica em chunks (~20-30 ms) e adiciona 150-300 ms de
+   * buffer próprio. Sons < 100 ms são descartados antes de alcançar o
+   * alto-falante. 200 ms garante dados suficientes no pipeline, e o decay
+   * exponencial mantém o som curto/clicky.
    */
   playMetronomeTick(accent = false, startAt?: number): void {
-    this.playTone(accent ? 880 : 660, 80, 'square', startAt);
+    const ctx = this.getCtx();
+    const osc = ctx.createOscillator();
+    const envGain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.value = accent ? 880 : 660;
+
+    const now = startAt ?? (ctx.currentTime + this.scheduleOffset());
+
+    // Ataque instantâneo + decay exponencial = som percussivo longo o
+    // suficiente para o codec Bluetooth processar.
+    envGain.gain.setValueAtTime(0.0001, now);
+    envGain.gain.linearRampToValueAtTime(0.9, now + 0.005);
+    envGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+
+    osc.connect(envGain);
+    envGain.connect(this.getMaster());
+
+    osc.start(now);
+    osc.stop(now + 0.21);
   }
 
   private chordIntervals(chordType: ChordType): number[] {

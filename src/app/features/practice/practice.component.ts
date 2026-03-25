@@ -235,7 +235,6 @@ export class PracticeComponent implements OnInit, OnDestroy {
       // pode descartar amostras ao reativar o pipeline.
       // ─────────────────────────────────────────────────────────────────────
       const audioStart = this.audio.getScheduleStart(); // ctx.currentTime + offset
-      const offsetMs   = this.audio.getScheduleOffsetMs();
 
       // Countdown: ticks 3, 2, 1
       this.audio.playMetronomeTick(false, audioStart);
@@ -254,20 +253,20 @@ export class PracticeComponent implements OnInit, OnDestroy {
       });
 
       // ─────────────────────────────────────────────────────────────────────
-      // Atualizações VISUAIS via setTimeout, atrasadas pelo mesmo offsetMs
-      // para manter visual e áudio em sincronia.
+      // Atualizações VISUAIS: imediatas, sem delay artificial.
+      // (A dessincronização com o áudio é tolerável e já existia antes.)
       // ─────────────────────────────────────────────────────────────────────
       const t = (delay: number, fn: () => void) => {
         this.rhythmTimers.push(setTimeout(fn, delay));
       };
 
-      t(offsetMs,               () => this.countdown.set(3));
-      t(offsetMs + msBeat,      () => this.countdown.set(2));
-      t(offsetMs + 2 * msBeat,  () => this.countdown.set(1));
-      t(offsetMs + 3 * msBeat,  () => this.countdown.set(0));  // GO!
-      t(offsetMs + 4 * msBeat,  () => this.countdown.set(-1)); // esconde
+      this.countdown.set(3);
+      t(msBeat,      () => this.countdown.set(2));
+      t(2 * msBeat,  () => this.countdown.set(1));
+      t(3 * msBeat,  () => this.countdown.set(0));  // GO!
+      t(4 * msBeat,  () => this.countdown.set(-1)); // esconde
 
-      const rhythmVisualStart = offsetMs + 4 * msBeat;
+      const rhythmVisualStart = 4 * msBeat;
       let cumMs = 0;
       ex.pattern.forEach((beat, idx) => {
         const beatDelay = rhythmVisualStart + cumMs;
@@ -283,8 +282,8 @@ export class PracticeComponent implements OnInit, OnDestroy {
       });
       t(rhythmVisualStart + cumMs, () => this.activeBeat.set(-1));
 
-      // Expected tap times: alinhados com o instante em que o usuário OUVE cada beat
-      const rhythmStartMs = Date.now() + offsetMs + 4 * msBeat;
+      // Expected tap times: alinhados com o instante visual (quando o usuário vê o beat)
+      const rhythmStartMs = Date.now() + 4 * msBeat;
       let msCum = 0;
       this.rhythmExpectedTimes = ex.pattern.map(note => {
         const time = rhythmStartMs + msCum;
