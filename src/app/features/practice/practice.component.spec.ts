@@ -15,6 +15,8 @@ function makeAudioSpy() {
     playChord: vi.fn(),
     playTone: vi.fn(),
     playMetronomeTick: vi.fn(),
+    getScheduleStart: vi.fn().mockReturnValue(0.2),
+    getScheduleOffsetMs: vi.fn().mockReturnValue(200),
   };
 }
 

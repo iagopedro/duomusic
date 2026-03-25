@@ -10,6 +10,7 @@ describe('AudioService', () => {
       setValueAtTime: vi.fn(),
       setTargetAtTime: vi.fn(),
       linearRampToValueAtTime: vi.fn(),
+      exponentialRampToValueAtTime: vi.fn(),
     },
     connect: vi.fn(),
   };
@@ -25,6 +26,7 @@ describe('AudioService', () => {
   const mockCtx = {
     state: 'running' as AudioContextState,
     currentTime: 0,
+    baseLatency: 0,
     destination: {},
     createOscillator: vi.fn().mockReturnValue(mockOscillator),
     createGain: vi.fn().mockReturnValue(mockGainNode),
@@ -114,23 +116,22 @@ describe('AudioService', () => {
     vi.useRealTimers();
   });
 
-  it('playInterval should play root and then upper note', () => {
-    vi.useFakeTimers();
+  it('playInterval should play root and upper note synchronously', () => {
     const spy = vi.spyOn(service, 'playTone');
     service.playInterval(261.63, 4, 800);
-    expect(spy.mock.calls.length).toBe(1); // root
-    vi.runAllTimers();
-    expect(spy.mock.calls.length).toBe(2); // + upper
-    vi.useRealTimers();
+    // Ambas as notas são agendadas de forma síncrona no Web Audio clock
+    expect(spy.mock.calls.length).toBe(2);
   });
 
-  it('playMetronomeTick should play accent at higher frequency', () => {
-    const spy = vi.spyOn(service, 'playTone');
+  it('playMetronomeTick should use higher frequency for accent', () => {
+    // playMetronomeTick cria seu próprio oscillator com envelope percussivo;
+    // verifica a frequência configurada no oscillator criado.
+    vi.clearAllMocks();
     service.playMetronomeTick(true);
-    const accentFreq = spy.mock.calls[0][0] as number;
-    spy.mockClear();
+    const accentFreq = mockOscillator.frequency.value;
+    vi.clearAllMocks();
     service.playMetronomeTick(false);
-    const normalFreq = spy.mock.calls[0][0] as number;
+    const normalFreq = mockOscillator.frequency.value;
     expect(accentFreq).toBeGreaterThan(normalFreq);
   });
 
