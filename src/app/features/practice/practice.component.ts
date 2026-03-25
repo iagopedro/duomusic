@@ -82,7 +82,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   readonly activeBeat = signal(-1);
   readonly countdown = signal(-1); // -1 = hidden, 3/2/1 = counting, 0 = GO!
 
-  private rhythmTimer: ReturnType<typeof setInterval> | null = null;
+  private rhythmTimers: ReturnType<typeof setTimeout>[] = [];
   private exerciseStartMs = 0;
   private rhythmBeatIndex = 0;
   private rhythmTapTimes: number[] = [];
@@ -222,65 +222,75 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.clearRhythmTimer();
 
     const msBeat = (60 / ex.bpm) * 1000;
+    const sBeat = msBeat / 1000;
     this.rhythmBeatIndex = 0;
     this.rhythmTapTimes = [];
     this.tappedBeats.set(new Array(ex.pattern.length).fill(false));
 
     this.audio.resume().then(() => {
-      const playBeat = (idx: number) => {
-        if (idx >= ex.pattern.length) {
-          this.activeBeat.set(-1);
-          return;
+      // ─────────────────────────────────────────────────────────────────────
+      // TODO o áudio é pré-agendado de uma só vez no clock interno do Web Audio.
+      // Isso garante um stream de áudio contínuo para dispositivos Bluetooth:
+      // sem pre-agendamento, cada tick chega de forma intermitente e o device BT
+      // pode descartar amostras ao reativar o pipeline.
+      // ─────────────────────────────────────────────────────────────────────
+      const audioStart = this.audio.getScheduleStart(); // ctx.currentTime + offset
+      const offsetMs   = this.audio.getScheduleOffsetMs();
+
+      // Countdown: ticks 3, 2, 1
+      this.audio.playMetronomeTick(false, audioStart);
+      this.audio.playMetronomeTick(false, audioStart + sBeat);
+      this.audio.playMetronomeTick(false, audioStart + 2 * sBeat);
+      // "GO!" (audioStart + 3*sBeat): sem tick de áudio
+
+      // Ritmo: começa 4 beats após o audioStart
+      const rhythmStartSecs = audioStart + 4 * sBeat;
+      let cumSecs = 0;
+      ex.pattern.forEach((beat, idx) => {
+        if (beat !== 'rest') {
+          this.audio.playMetronomeTick(idx === 0, rhythmStartSecs + cumSecs);
         }
-        const beat = ex.pattern[idx];
-        const duration = this.noteDurationMs(beat, msBeat);
-        if (beat !== 'rest') this.audio.playMetronomeTick(idx === 0);
-        this.activeBeat.set(idx);
-        this.rhythmBeatIndex = idx + 1;
+        cumSecs += this.noteDurationMs(beat, msBeat) / 1000;
+      });
 
-        setTimeout(() => {
-          if (this.rhythmBeatIndex === idx + 1) this.activeBeat.set(-1);
-        }, duration * 0.4);
-
-        this.rhythmTimer = setTimeout(() => playBeat(idx + 1), duration);
+      // ─────────────────────────────────────────────────────────────────────
+      // Atualizações VISUAIS via setTimeout, atrasadas pelo mesmo offsetMs
+      // para manter visual e áudio em sincronia.
+      // ─────────────────────────────────────────────────────────────────────
+      const t = (delay: number, fn: () => void) => {
+        this.rhythmTimers.push(setTimeout(fn, delay));
       };
 
-      // Countdown 3 → 2 → 1, then "GO!" coincide exatamente com o beat 0
-      let count = 3;
-      const tick = () => {
-        this.countdown.set(count);
-        this.audio.playMetronomeTick(false);
+      t(offsetMs,               () => this.countdown.set(3));
+      t(offsetMs + msBeat,      () => this.countdown.set(2));
+      t(offsetMs + 2 * msBeat,  () => this.countdown.set(1));
+      t(offsetMs + 3 * msBeat,  () => this.countdown.set(0));  // GO!
+      t(offsetMs + 4 * msBeat,  () => this.countdown.set(-1)); // esconde
 
-        if (count > 1) {
-          count--;
-          this.rhythmTimer = setTimeout(tick, msBeat);
-        } else {
-          // Após "1": exibe "GO!" por um beat inteiro (sem som visual de preparação)
-          // GO! não emite som — o acento sonoro pertence exclusivamente ao beat 0
-          this.rhythmTimer = setTimeout(() => {
-            this.countdown.set(0); // exibe "GO!" — sem som aqui
+      const rhythmVisualStart = offsetMs + 4 * msBeat;
+      let cumMs = 0;
+      ex.pattern.forEach((beat, idx) => {
+        const beatDelay = rhythmVisualStart + cumMs;
+        const duration  = this.noteDurationMs(beat, msBeat);
+        t(beatDelay, () => {
+          this.activeBeat.set(idx);
+          this.rhythmBeatIndex = idx + 1;
+          t(duration * 0.4, () => {
+            if (this.rhythmBeatIndex === idx + 1) this.activeBeat.set(-1);
+          });
+        });
+        cumMs += duration;
+      });
+      t(rhythmVisualStart + cumMs, () => this.activeBeat.set(-1));
 
-            this.rhythmTimer = setTimeout(() => {
-              this.countdown.set(-1); // esconde overlay antes de iniciar o ritmo
-
-              const startTime = Date.now();
-              // Compensa a latência do dispositivo de áudio (Bluetooth pode ter 150–300 ms).
-              // Sem isso, o usuário toca no momento em que OUVE o beat, mas o tempo de
-              // referência foi gravado antes do som chegar ao fone, resultando em "sempre atrasado".
-              const latencyMs = this.audio.getOutputLatencyMs();
-              let cumulative = 0;
-              this.rhythmExpectedTimes = ex.pattern.map((note) => {
-                const time = startTime + cumulative + latencyMs;
-                cumulative += this.noteDurationMs(note, msBeat);
-                return time;
-              });
-
-              playBeat(0); // beat 0 emite o acento — único sinal sonoro de início
-            }, msBeat);
-          }, msBeat);
-        }
-      };
-      tick();
+      // Expected tap times: alinhados com o instante em que o usuário OUVE cada beat
+      const rhythmStartMs = Date.now() + offsetMs + 4 * msBeat;
+      let msCum = 0;
+      this.rhythmExpectedTimes = ex.pattern.map(note => {
+        const time = rhythmStartMs + msCum;
+        msCum += this.noteDurationMs(note, msBeat);
+        return time;
+      });
     });
   }
 
@@ -425,9 +435,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   private clearRhythmTimer(): void {
-    if (this.rhythmTimer !== null) {
-      clearTimeout(this.rhythmTimer);
-      this.rhythmTimer = null;
-    }
+    this.rhythmTimers.forEach(id => clearTimeout(id));
+    this.rhythmTimers = [];
   }
 }

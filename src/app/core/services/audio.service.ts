@@ -64,6 +64,20 @@ export class AudioService {
     return this.scheduleOffset() * 1000;
   }
 
+  /**
+   * Retorna o próximo instante de início seguro no clock do Web Audio (em segundos).
+   * Use este valor para pré-agendar sequências inteiras de sons em uma única chamada,
+   * garantindo um stream contínuo para dispositivos Bluetooth.
+   */
+  getScheduleStart(): number {
+    return this.getCtx().currentTime + this.scheduleOffset();
+  }
+
+  /** Offset de agendamento em milissegundos (equivalente a getOutputLatencyMs). */
+  getScheduleOffsetMs(): number {
+    return this.scheduleOffset() * 1000;
+  }
+
   private getMaster(): GainNode {
     this.getCtx();
     return this.masterGain!;
@@ -137,8 +151,14 @@ export class AudioService {
     });
   }
 
-  playMetronomeTick(accent = false): void {
-    this.playTone(accent ? 880 : 660, 60, 'square');
+  /**
+   * @param accent Tick acentuado (beat 0) ou tick normal.
+   * @param startAt Instante de início em segundos (Web Audio clock). Se omitido,
+   *                agenda com scheduleOffset() como lookahead — porém prefira passar
+   *                um valor explícito ao pré-agendar sequências inteiras de beats.
+   */
+  playMetronomeTick(accent = false, startAt?: number): void {
+    this.playTone(accent ? 880 : 660, 80, 'square', startAt);
   }
 
   private chordIntervals(chordType: ChordType): number[] {
