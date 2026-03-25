@@ -6,7 +6,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "musicteoria": {
+    "duomusic": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -61,10 +61,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "musicteoria:build:production"
+              "buildTarget": "duomusic:build:production"
             },
             "development": {
-              "buildTarget": "musicteoria:build:development"
+              "buildTarget": "duomusic:build:development"
             }
           },
           "defaultConfiguration": "development"

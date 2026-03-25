@@ -1,4 +1,4 @@
-# MúsicaTeoria — Frontend MVP Prototype
+# DuoMusic — Frontend MVP Prototype
 
 A **mobile-first music theory learning system** built with Angular 21, Angular Material, and the Web Audio API.
 

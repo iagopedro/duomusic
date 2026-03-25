@@ -11,7 +11,7 @@ import { ACHIEVEMENTS } from '../../data/achievements.data';
 import { EXERCISES } from '../../data/exercises.data';
 import { MODULES } from '../../data/modules.data';
 
-const STORAGE_KEY = 'musicteoria_progress';
+const STORAGE_KEY = 'duomusic_progress';
 
 const XP_PER_LEVEL = 100;
 

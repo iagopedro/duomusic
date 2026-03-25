@@ -3,7 +3,7 @@ import { AppSettings } from '../models';
 import { StorageService } from '../storage/storage.service';
 import { AudioService } from './audio.service';
 
-const STORAGE_KEY = 'musicteoria_settings';
+const STORAGE_KEY = 'duomusic_settings';
 
 const DEFAULT_SETTINGS: AppSettings = {
   volume: 0.7,

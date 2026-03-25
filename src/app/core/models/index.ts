@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────
-// Domain models for MúsicaTeoria MVP
+// Domain models for DuoMusic MVP
 // ──────────────────────────────────────────────
 
 export type ChordType = 'major' | 'minor' | 'dim' | 'aug';

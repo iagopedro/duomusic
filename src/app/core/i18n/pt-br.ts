@@ -1,6 +1,6 @@
 export const PT_BR = {
   // App-wide
-  'app.title': 'MúsicaTeoria',
+  'app.title': 'DuoMusic',
   'app.tagline': 'Aprenda música com prática',
 
   // Navigation

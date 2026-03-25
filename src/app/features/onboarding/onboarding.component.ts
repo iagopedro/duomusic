@@ -96,7 +96,7 @@ export class OnboardingComponent {
   }
 
   finish(): void {
-    this.storage.set('musicteoria_onboarding_done', true);
+    this.storage.set('duomusic_onboarding_done', true);
     this.router.navigate(['/home']);
   }
 

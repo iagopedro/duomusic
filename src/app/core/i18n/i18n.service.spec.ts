@@ -14,7 +14,7 @@ describe('I18nService', () => {
   });
 
   it('t() should return the translated string for a known key', () => {
-    expect(service.t('app.title')).toBe('MúsicaTeoria');
+    expect(service.t('app.title')).toBe('DuoMusic');
   });
 
   it('t() should interpolate numeric param', () => {
