@@ -13,17 +13,47 @@ describe('I18nService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('t() should return translated string', () => {
+  it('t() should return the translated string for a known key', () => {
     expect(service.t('app.title')).toBe('MúsicaTeoria');
   });
 
-  it('t() should interpolate params', () => {
-    const result = service.t('home.level', { n: 5 });
-    expect(result).toBe('Nível 5');
+  it('t() should interpolate numeric param', () => {
+    expect(service.t('home.level', { n: 5 })).toBe('Nível 5');
   });
 
-  it('t() should return key when not found', () => {
-    const result = service.t('nonexistent.key' as any);
-    expect(result).toBe('nonexistent.key');
+  it('t() should interpolate string param', () => {
+    expect(service.t('home.xp', { xp: '150' })).toBe('150 XP');
+  });
+
+  it('t() should interpolate multiple params', () => {
+    expect(service.t('practice.exercise.of', { n: 2, total: 5 })).toBe('Exercício 2 de 5');
+  });
+
+  it('t() should return the key itself when translation is not found', () => {
+    expect(service.t('nonexistent.key' as any)).toBe('nonexistent.key');
+  });
+
+  it('tStr() should work with runtime string keys', () => {
+    expect(service.tStr('chord.major')).toBe('Maior');
+    expect(service.tStr('chord.minor')).toBe('Menor');
+    expect(service.tStr('chord.dim')).toBe('Diminuto');
+    expect(service.tStr('chord.aug')).toBe('Aumentado');
+  });
+
+  it('tStr() should return key for unknown runtime key', () => {
+    expect(service.tStr('unknown.key')).toBe('unknown.key');
+  });
+
+  it('should translate all interval names correctly', () => {
+    const cases: [string, string][] = [
+      ['interval.unison', 'Uníssono'],
+      ['interval.minor2', '2ª menor'],
+      ['interval.major3', '3ª maior'],
+      ['interval.perfect5', '5ª justa'],
+      ['interval.octave', 'Oitava'],
+    ];
+    for (const [key, expected] of cases) {
+      expect(service.tStr(key)).toBe(expected);
+    }
   });
 });

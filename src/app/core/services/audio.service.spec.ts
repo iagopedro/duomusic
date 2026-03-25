@@ -4,31 +4,41 @@ import { AudioService } from './audio.service';
 describe('AudioService', () => {
   let service: AudioService;
 
-  // Mock Web Audio API
   const mockGainNode = {
-    gain: { value: 0, setTargetAtTime: jasmine.createSpy(), linearRampToValueAtTime: jasmine.createSpy() },
-    connect: jasmine.createSpy(),
+    gain: {
+      value: 0,
+      setValueAtTime: vi.fn(),
+      setTargetAtTime: vi.fn(),
+      linearRampToValueAtTime: vi.fn(),
+    },
+    connect: vi.fn(),
   };
 
   const mockOscillator = {
     type: 'sine' as OscillatorType,
     frequency: { value: 0 },
-    connect: jasmine.createSpy(),
-    start: jasmine.createSpy(),
-    stop: jasmine.createSpy(),
+    connect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
   };
 
   const mockCtx = {
-    state: 'running',
+    state: 'running' as AudioContextState,
     currentTime: 0,
     destination: {},
-    createOscillator: jasmine.createSpy().and.returnValue(mockOscillator),
-    createGain: jasmine.createSpy().and.returnValue(mockGainNode),
-    resume: jasmine.createSpy().and.returnValue(Promise.resolve()),
+    createOscillator: vi.fn().mockReturnValue(mockOscillator),
+    createGain: vi.fn().mockReturnValue(mockGainNode),
+    resume: vi.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(() => {
-    (window as any).AudioContext = jasmine.createSpy('AudioContext').and.returnValue(mockCtx);
+    vi.clearAllMocks();
+    mockCtx.createOscillator.mockReturnValue(mockOscillator);
+    mockCtx.createGain.mockReturnValue(mockGainNode);
+    // AudioContext is a class — must use 'function' keyword (not arrow) for class mock
+    (window as any).AudioContext = vi.fn().mockImplementation(function(this: any) {
+      return mockCtx;
+    });
     TestBed.configureTestingModule({ providers: [AudioService] });
     service = TestBed.inject(AudioService);
   });
@@ -37,26 +47,103 @@ describe('AudioService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('setMasterVolume should clamp to [0,1]', () => {
-    service['getCtx'](); // initialise ctx
+  it('setMasterVolume should clamp to 1 when above max', () => {
+    service['getCtx']();
     service.setMasterVolume(1.5);
     expect(service['_volume']).toBe(1);
+  });
+
+  it('setMasterVolume should clamp to 0 when below min', () => {
+    service['getCtx']();
     service.setMasterVolume(-0.5);
     expect(service['_volume']).toBe(0);
   });
 
-  it('playTone should create an oscillator and connect it', () => {
+  it('setMasterVolume should set exact value within range', () => {
+    service['getCtx']();
+    service.setMasterVolume(0.5);
+    expect(service['_volume']).toBe(0.5);
+  });
+
+  it('playTone should create and connect an oscillator', () => {
     service.playTone(440, 500);
     expect(mockCtx.createOscillator).toHaveBeenCalled();
     expect(mockOscillator.connect).toHaveBeenCalled();
+    expect(mockOscillator.start).toHaveBeenCalled();
+    expect(mockOscillator.stop).toHaveBeenCalled();
   });
 
-  it('playChord(major) should play 3 tones', (done) => {
-    const spy = spyOn(service, 'playTone');
+  it('playTone should use provided oscillator type', () => {
+    service.playTone(440, 300, 'sawtooth');
+    expect(mockOscillator.type).toBe('sawtooth');
+  });
+
+  it('playChord(major) should play 3 tones', () => {
+    vi.useFakeTimers();
+    const spy = vi.spyOn(service, 'playTone');
     service.playChord(261.63, 'major', 500);
-    setTimeout(() => {
-      expect(spy.calls.count()).toBeGreaterThanOrEqual(3);
-      done();
-    }, 200);
+    vi.runAllTimers();
+    expect(spy.mock.calls.length).toBeGreaterThanOrEqual(3);
+    vi.useRealTimers();
+  });
+
+  it('playChord(minor) should play 3 tones', () => {
+    vi.useFakeTimers();
+    const spy = vi.spyOn(service, 'playTone');
+    service.playChord(261.63, 'minor', 500);
+    vi.runAllTimers();
+    expect(spy.mock.calls.length).toBe(3);
+    vi.useRealTimers();
+  });
+
+  it('playChord(dim) should play 3 tones', () => {
+    vi.useFakeTimers();
+    const spy = vi.spyOn(service, 'playTone');
+    service.playChord(261.63, 'dim', 500);
+    vi.runAllTimers();
+    expect(spy.mock.calls.length).toBe(3);
+    vi.useRealTimers();
+  });
+
+  it('playChord(aug) should play 3 tones', () => {
+    vi.useFakeTimers();
+    const spy = vi.spyOn(service, 'playTone');
+    service.playChord(261.63, 'aug', 500);
+    vi.runAllTimers();
+    expect(spy.mock.calls.length).toBe(3);
+    vi.useRealTimers();
+  });
+
+  it('playInterval should play root and then upper note', () => {
+    vi.useFakeTimers();
+    const spy = vi.spyOn(service, 'playTone');
+    service.playInterval(261.63, 4, 800);
+    expect(spy.mock.calls.length).toBe(1); // root
+    vi.runAllTimers();
+    expect(spy.mock.calls.length).toBe(2); // + upper
+    vi.useRealTimers();
+  });
+
+  it('playMetronomeTick should play accent at higher frequency', () => {
+    const spy = vi.spyOn(service, 'playTone');
+    service.playMetronomeTick(true);
+    const accentFreq = spy.mock.calls[0][0] as number;
+    spy.mockClear();
+    service.playMetronomeTick(false);
+    const normalFreq = spy.mock.calls[0][0] as number;
+    expect(accentFreq).toBeGreaterThan(normalFreq);
+  });
+
+  it('resume should call ctx.resume when suspended', async () => {
+    mockCtx.state = 'suspended';
+    await service.resume();
+    expect(mockCtx.resume).toHaveBeenCalled();
+    mockCtx.state = 'running';
+  });
+
+  it('resume should not call ctx.resume when running', async () => {
+    mockCtx.state = 'running';
+    await service.resume();
+    expect(mockCtx.resume).not.toHaveBeenCalled();
   });
 });
