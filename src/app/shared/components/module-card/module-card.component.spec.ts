@@ -23,7 +23,7 @@ describe('ModuleCardComponent', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(ModuleCardComponent);
     component = fixture.componentInstance;
-    component.module = mockModule;
+    fixture.componentRef.setInput('module', mockModule);
     fixture.detectChanges();
   });
 

@@ -147,4 +147,14 @@ describe('AudioService', () => {
     await service.resume();
     expect(mockCtx.resume).not.toHaveBeenCalled();
   });
+
+  it('getAudioContext should return the AudioContext instance', () => {
+    const ctx = service.getAudioContext();
+    expect(ctx).toBe(mockCtx);
+  });
+
+  it('getMasterGainNode should return the master gain node', () => {
+    const gain = service.getMasterGainNode();
+    expect(gain).toBe(mockGainNode);
+  });
 });

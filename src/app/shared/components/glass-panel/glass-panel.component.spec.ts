@@ -45,7 +45,7 @@ describe('GlassPanelComponent', () => {
   });
 
   it('should default padding to 1.25rem', () => {
-    expect(component.padding).toBe('1.25rem');
+    expect(component.padding()).toBe('1.25rem');
   });
 
   it('should project slotted content via ng-content', async () => {

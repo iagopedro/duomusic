@@ -22,15 +22,15 @@ describe('PrimaryButtonComponent', () => {
   // ── Valores padrão ──────────────────────────────────────────────────────────
 
   it('should default to primary variant', () => {
-    expect(component.variant).toBe('primary');
+    expect(component.variant()).toBe('primary');
   });
 
   it('should default to md size', () => {
-    expect(component.size).toBe('md');
+    expect(component.size()).toBe('md');
   });
 
   it('should default to enabled', () => {
-    expect(component.disabled).toBe(false);
+    expect(component.disabled()).toBe(false);
   });
 
   // ── Entradas (inputs) ───────────────────────────────────────────────────────

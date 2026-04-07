@@ -20,7 +20,7 @@ describe('BadgeChipComponent', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(BadgeChipComponent);
     component = fixture.componentInstance;
-    component.achievement = mockAchievement;
+    fixture.componentRef.setInput('achievement', mockAchievement);
     fixture.detectChanges();
   });
 

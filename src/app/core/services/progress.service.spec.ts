@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ProgressService } from './progress.service';
 import { StorageService } from '../storage/storage.service';
 import { ExerciseResult } from '../models';
+import { MODULES } from '../../data/modules.data';
 
 const DEFAULT_PROGRESS = {
   xp: 0, level: 1, streak: 0, lastPracticeDate: null,
@@ -117,9 +118,10 @@ describe('ProgressService', () => {
   });
 
   it('completing all exercises in fundamentals should mark it complete and unlock intervals', () => {
-    service.recordResult(makeResult({ exerciseId: 'r-1', moduleId: 'fundamentals', correct: true, xpEarned: 10 }));
-    service.recordResult(makeResult({ exerciseId: 'r-2', moduleId: 'fundamentals', correct: true, xpEarned: 10 }));
-    service.recordResult(makeResult({ exerciseId: 'r-3', moduleId: 'fundamentals', correct: true, xpEarned: 15 }));
+    const fundamentals = MODULES.find(m => m.id === 'fundamentals')!;
+    fundamentals.exerciseIds.forEach((exId, i) => {
+      service.recordResult(makeResult({ exerciseId: exId, moduleId: 'fundamentals', correct: true, xpEarned: 10 }));
+    });
     expect(service.isModuleCompleted('fundamentals')).toBe(true);
     expect(service.isModuleUnlocked('intervals')).toBe(true);
   });

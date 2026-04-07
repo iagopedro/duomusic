@@ -5,6 +5,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { PracticeComponent } from './practice.component';
 import { AudioService } from '../../core/services/audio.service';
 import { ProgressService } from '../../core/services/progress.service';
+import { BackgroundTrackService } from '../../core/services/background-track.service';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -14,9 +15,18 @@ function makeAudioSpy() {
     playInterval: vi.fn(),
     playChord: vi.fn(),
     playTone: vi.fn(),
+    playMelody: vi.fn().mockReturnValue(1000),
     playMetronomeTick: vi.fn(),
     getScheduleStart: vi.fn().mockReturnValue(0.2),
     getScheduleOffsetMs: vi.fn().mockReturnValue(200),
+  };
+}
+
+function makeBgTrackSpy() {
+  return {
+    start: vi.fn(),
+    stop: vi.fn(),
+    duckFor: vi.fn(),
   };
 }
 
@@ -33,6 +43,7 @@ function makeRoute(moduleId: string) {
 async function createFixture(moduleId: string) {
   const audioSpy = makeAudioSpy();
   const progressSpy = makeProgressSpy();
+  const bgTrackSpy = makeBgTrackSpy();
   const routerSpy = { navigate: vi.fn() };
 
   await TestBed.configureTestingModule({
@@ -41,6 +52,7 @@ async function createFixture(moduleId: string) {
       provideNoopAnimations(),
       { provide: AudioService, useValue: audioSpy },
       { provide: ProgressService, useValue: progressSpy },
+      { provide: BackgroundTrackService, useValue: bgTrackSpy },
       { provide: ActivatedRoute, useValue: makeRoute(moduleId) },
       { provide: Router, useValue: routerSpy },
     ],
@@ -50,7 +62,7 @@ async function createFixture(moduleId: string) {
   fixture.detectChanges();
   await fixture.whenStable();
 
-  return { fixture, component: fixture.componentInstance, audioSpy, progressSpy, routerSpy };
+  return { fixture, component: fixture.componentInstance, audioSpy, progressSpy, bgTrackSpy, routerSpy };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -450,11 +462,6 @@ describe('PracticeComponent — computed helpers', () => {
   it('moduleName() should return translated module name', async () => {
     const { component } = await createFixture('fundamentals');
     expect(component.moduleName()).toBe('Fundamentos');
-  });
-
-  it('trackByIndex should return the index itself', async () => {
-    const { component } = await createFixture('fundamentals');
-    expect(component.trackByIndex(3)).toBe(3);
   });
 
   it('currentExercise() should return null when exercises list is empty', async () => {
