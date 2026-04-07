@@ -83,6 +83,16 @@ export class AudioService {
     return this.masterGain!;
   }
 
+  /** Expõe o AudioContext para serviços que precisam criar nós customizados. */
+  getAudioContext(): AudioContext {
+    return this.getCtx();
+  }
+
+  /** Expõe o GainNode master para encadear nós de áudio externos. */
+  getMasterGainNode(): GainNode {
+    return this.getMaster();
+  }
+
   /** Resume AudioContext after a user gesture (required by some browsers). */
   async resume(): Promise<void> {
     const ctx = this.getCtx();
@@ -190,5 +200,33 @@ export class AudioService {
       aug:   [0, 4, 8],
     };
     return map[chordType];
+  }
+
+  /**
+   * Toca uma sequência de notas (melodia) pré-agendada no Web Audio clock.
+   * @param notes Array de { freq, durationMs }
+   * @param onNoteStart Callback chamado com o índice da nota quando ela começa a soar
+   * @returns Duração total em ms
+   */
+  playMelody(
+    notes: { freq: number; durationMs: number }[],
+    onNoteStart?: (index: number) => void,
+  ): number {
+    const ctx = this.getCtx();
+    let startAt = ctx.currentTime + this.scheduleOffset();
+    let totalMs = 0;
+    const gapS = 0.08; // 80 ms gap entre notas para separação clara
+
+    notes.forEach((n, i) => {
+      this.playTone(n.freq, n.durationMs, 'sine', startAt);
+      if (onNoteStart) {
+        const delayMs = (startAt - ctx.currentTime) * 1000;
+        setTimeout(() => onNoteStart(i), delayMs);
+      }
+      startAt += n.durationMs / 1000 + gapS;
+      totalMs += n.durationMs + gapS * 1000;
+    });
+
+    return totalMs;
   }
 }

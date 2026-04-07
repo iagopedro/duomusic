@@ -8,16 +8,18 @@ import { trigger, transition, style, animate } from '@angular/animations';
 
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AudioService } from '../../core/services/audio.service';
+import { BackgroundTrackService } from '../../core/services/background-track.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { EXERCISES } from '../../data/exercises.data';
 import { MODULES } from '../../data/modules.data';
 import {
-  Exercise, IntervalExercise, ChordExercise, RhythmExercise,
+  Exercise, IntervalExercise, ChordExercise, RhythmExercise, NoteExercise, MelodyExercise,
   ExerciseResult, ModuleId, ChordType,
 } from '../../core/models';
 import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-panel.component';
 import { PrimaryButtonComponent } from '../../shared/components/primary-button/primary-button.component';
 import { XpBarComponent } from '../../shared/components/xp-bar/xp-bar.component';
+import { PianoKeyboardComponent } from '../../shared/components/piano-keyboard/piano-keyboard.component';
 
 type PracticePhase = 'intro' | 'exercise' | 'feedback' | 'result';
 
@@ -34,7 +36,7 @@ const INTERVAL_NAMES: Record<number, string> = {
   standalone: true,
   imports: [
     CommonModule, MatIconModule,
-    GlassPanelComponent, PrimaryButtonComponent, XpBarComponent,
+    GlassPanelComponent, PrimaryButtonComponent, XpBarComponent, PianoKeyboardComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
@@ -79,6 +81,18 @@ export class PracticeComponent implements OnInit, OnDestroy {
   readonly lastXpEarned = signal(0);
   readonly sessionXp = signal(0);
   readonly sessionResults = signal<ExerciseResult[]>([]);
+
+  // Note-id state
+  readonly noteHintActive = signal(false);
+  private noteHintTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Melody state
+  readonly melodyPhase = signal<'listen' | 'play'>('listen');
+  readonly melodyStep = signal(0);          // qual nota o usuário deve tocar agora
+  readonly melodyWrongNote = signal<string | null>(null);
+  readonly melodyPlayedNotes = signal<string[]>([]); // notas tocadas corretamente
+  private melodyTimers: ReturnType<typeof setTimeout>[] = [];
+  private melodyPlayingNote = signal<string | null>(null); // tecla acesa durante reprodução
 
   // Rhythm state
   readonly tapping = signal(false);
@@ -133,6 +147,31 @@ export class PracticeComponent implements OnInit, OnDestroy {
     return [];
   });
 
+  readonly noteHintKey = computed<string | null>(() => {
+    const ex = this.currentExercise();
+    if (ex?.type === 'note-id' && (ex as NoteExercise).showHint && this.noteHintActive()) {
+      return (ex as NoteExercise).noteName;
+    }
+    return null;
+  });
+
+  // Tecla que deve ser tocada neste instante do exercício de melodia
+  readonly melodyExpectedNote = computed<string | null>(() => {
+    const ex = this.currentExercise();
+    if (ex?.type !== 'melody') return null;
+    const step = this.melodyStep();
+    const notes = (ex as MelodyExercise).notes;
+    if (this.melodyPhase() === 'play' && step < notes.length) {
+      return notes[step].note;
+    }
+    return null;
+  });
+
+  // Tecla a iluminar durante a reprodução automática da melodia
+  readonly melodyHighlightNote = computed<string | null>(() =>
+    this.melodyPlayingNote()
+  );
+
   readonly explanationText = computed(() => {
     const ex = this.currentExercise();
     if (!ex?.explanationKey) return null;
@@ -151,6 +190,19 @@ export class PracticeComponent implements OnInit, OnDestroy {
         ? `O acorde era ${name}. Ouvido afinado!`
         : `O acorde correto era: ${name}.`;
     }
+    if (ex.type === 'note-id') {
+      const n = ex as NoteExercise;
+      return correct
+        ? `A nota era ${n.noteName.replace(/\d/, '')}. Perfeito!`
+        : `A nota correta era ${n.noteName.replace(/\d/, '')}. Continue praticando!`;
+    }
+    if (ex.type === 'melody') {
+      const m = ex as MelodyExercise;
+      const seq = m.notes.map(n => n.note.replace(/\d/, '')).join(' → ');
+      return correct
+        ? `Melodia completa: ${seq}. Excelente memória musical!`
+        : `A melodia era: ${seq}. Ouça novamente e tente mais uma vez!`;
+    }
     return null;
   });
 
@@ -158,6 +210,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   readonly i18n = inject(I18nService);
   private readonly audio = inject(AudioService);
+  private readonly bgTrack = inject(BackgroundTrackService);
   private readonly progress = inject(ProgressService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -174,7 +227,10 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.bgTrack.stop();
     this.clearRhythmTimer();
+    this.clearMelodyTimers();
+    if (this.noteHintTimer) clearTimeout(this.noteHintTimer);
   }
 
   startPractice(): void {
@@ -182,6 +238,8 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.currentIndex.set(0);
     this.exerciseStartMs = Date.now();
     this.resetExerciseState();
+    // Inicia trilha de fundo (mantém pipeline Bluetooth ativo)
+    this.audio.resume().then(() => this.bgTrack.start(this.moduleId));
     // Auto-play audio exercises
     setTimeout(() => this.playCurrentExercise(), 500);
   }
@@ -190,12 +248,25 @@ export class PracticeComponent implements OnInit, OnDestroy {
     const ex = this.currentExercise();
     if (!ex) return;
     this.audio.resume().then(() => {
+      const offset = this.audio.getScheduleOffsetMs();
       if (ex.type === 'interval') {
         const ie = ex as IntervalExercise;
+        this.bgTrack.duckFor(800 * 2 + 150 + offset + 300);
         this.audio.playInterval(ie.rootFreq, ie.semitones, 800);
       } else if (ex.type === 'chord') {
         const ce = ex as ChordExercise;
+        this.bgTrack.duckFor(1200 + offset + 300);
         this.audio.playChord(ce.rootFreq, ce.chordType, 1200);
+      } else if (ex.type === 'note-id') {
+        const ne = ex as NoteExercise;
+        this.bgTrack.duckFor(900 + offset + 300);
+        this.audio.playTone(ne.noteFreq, 900);
+        if (ne.showHint) {
+          this.noteHintActive.set(true);
+          this.noteHintTimer = setTimeout(() => this.noteHintActive.set(false), 1800);
+        }
+      } else if (ex.type === 'melody') {
+        this.playMelodyAudio(ex as MelodyExercise);
       }
     });
   }
@@ -213,9 +284,68 @@ export class PracticeComponent implements OnInit, OnDestroy {
       correct = this.selectedAnswer() === (ex as IntervalExercise).semitones;
     } else if (ex.type === 'chord') {
       correct = this.selectedAnswer() === (ex as ChordExercise).chordType;
+    } else if (ex.type === 'note-id') {
+      correct = this.selectedAnswer() === (ex as NoteExercise).noteName;
     }
 
     this.finishExercise(correct, correct ? ex.xpReward : 0);
+  }
+
+  selectNoteAndSubmit(note: string): void {
+    this.selectAnswer(note);
+    // Small delay so the key highlight renders before feedback transition
+    setTimeout(() => this.submitAnswer(), 150);
+  }
+
+  // ── Melody ────────────────────────────────────────────────────────────────
+
+  private playMelodyAudio(ex: MelodyExercise): void {
+    this.clearMelodyTimers();
+    this.melodyPlayingNote.set(null);
+    const totalMs = this.audio.playMelody(ex.notes, (idx) => {
+      this.melodyPlayingNote.set(ex.notes[idx].note);
+      const dur = ex.notes[idx].durationMs;
+      this.melodyTimers.push(
+        setTimeout(() => this.melodyPlayingNote.set(null), dur + 60),
+      );
+    });
+    this.bgTrack.duckFor(totalMs + this.audio.getScheduleOffsetMs() + 300);
+  }
+
+  startMelodyPlay(): void {
+    this.melodyPhase.set('play');
+    this.melodyStep.set(0);
+    this.melodyPlayedNotes.set([]);
+    this.melodyWrongNote.set(null);
+  }
+
+  tapMelodyNote(note: string): void {
+    const ex = this.currentExercise() as MelodyExercise;
+    if (!ex || ex.type !== 'melody' || this.melodyPhase() !== 'play') return;
+
+    const step = this.melodyStep();
+    const expected = ex.notes[step].note;
+
+    if (note === expected) {
+      const played = [...this.melodyPlayedNotes(), note];
+      this.melodyPlayedNotes.set(played);
+
+      if (played.length === ex.notes.length) {
+        // Melodia completa com acerto
+        this.finishExercise(true, ex.xpReward);
+      } else {
+        this.melodyStep.set(step + 1);
+      }
+    } else {
+      // Nota errada: pisca em vermelho e permite tentar novamente
+      this.melodyWrongNote.set(note);
+      setTimeout(() => this.melodyWrongNote.set(null), 500);
+    }
+  }
+
+  private clearMelodyTimers(): void {
+    this.melodyTimers.forEach(id => clearTimeout(id));
+    this.melodyTimers = [];
   }
 
   // ── Rhythm ────────────────────────────────────────────────────────────────
@@ -232,6 +362,13 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.tappedBeats.set(new Array(ex.pattern.length).fill(false));
 
     this.audio.resume().then(() => {
+      // Duck trilha de fundo durante countdown + padrão rítmico
+      let patternDurationMs = 0;
+      ex.pattern.forEach(beat => {
+        patternDurationMs += this.noteDurationMs(beat, msBeat);
+      });
+      this.bgTrack.duckFor(4 * msBeat + patternDurationMs + this.audio.getScheduleOffsetMs() + 300);
+
       // ─────────────────────────────────────────────────────────────────────
       // TODO o áudio é pré-agendado de uma só vez no clock interno do Web Audio.
       // Isso garante um stream de áudio contínuo para dispositivos Bluetooth:
@@ -364,6 +501,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   nextExercise(): void {
     if (this.isLastExercise()) {
+      this.bgTrack.stop();
       this.phase.set('result');
       return;
     }
@@ -375,6 +513,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
+    this.bgTrack.stop();
     this.router.navigate(['/home']);
   }
 
@@ -410,8 +549,10 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.sessionResults.update(r => [...r, result]);
     this.phase.set('feedback');
 
-    // Play audio feedback
+    // Play audio feedback (duck trilha de fundo)
     this.audio.resume().then(() => {
+      const offset = this.audio.getScheduleOffsetMs();
+      this.bgTrack.duckFor(correct ? 620 + offset + 200 : 400 + offset + 200);
       if (correct) {
         this.audio.playTone(523.25, 150); // C5
         setTimeout(() => this.audio.playTone(659.25, 150), 160); // E5
@@ -431,6 +572,13 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.rhythmExpectedTimes = [];
     this.rhythmBeatIndex = 0;
     this.clearRhythmTimer();
+    // Melody reset
+    this.melodyPhase.set('listen');
+    this.melodyStep.set(0);
+    this.melodyPlayedNotes.set([]);
+    this.melodyWrongNote.set(null);
+    this.melodyPlayingNote.set(null);
+    this.clearMelodyTimers();
   }
 
   private noteDurationMs(note: string, msBeat: number): number {
