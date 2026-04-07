@@ -145,7 +145,7 @@ export class ProgressService {
     const allDone = module.exerciseIds.every(id => exercisesDone.has(id));
     if (!allDone) return;
 
-    // Mark module complete and unlock next
+    // Marca módulo como concluído e desbloqueia o próximo
     this._progress.update(prev => {
       const completedModuleIds = [...prev.completedModuleIds, moduleId];
       const nextModule = MODULES.find(m => m.requiredModuleId === moduleId);

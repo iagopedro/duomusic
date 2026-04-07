@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────
-// Domain models for DuoMusic MVP
+// Modelos de domínio do DuoMusic MVP
 // ──────────────────────────────────────────────
 
 export type ChordType = 'major' | 'minor' | 'dim' | 'aug';
@@ -15,7 +15,7 @@ export interface Module {
   icon: string;
   color: string;
   order: number;
-  requiredModuleId?: ModuleId; // previous module that must be completed to unlock
+  requiredModuleId?: ModuleId; // módulo anterior que deve ser concluído para desbloquear
   minXpToUnlock: number;
   exerciseIds: string[];
 }
@@ -25,17 +25,17 @@ export interface BaseExercise {
   id: string;
   moduleId: ModuleId;
   type: ExerciseType;
-  difficulty: 1 | 2 | 3;          // 1 = easy, 2 = medium, 3 = hard
+  difficulty: 1 | 2 | 3;          // 1 = fácil, 2 = médio, 3 = difícil
   xpReward: number;
-  conceptKey: string;              // i18n key for the concept intro
-  questionKey: string;             // i18n key for the question label
-  explanationKey?: string;         // i18n key for the post-answer explanation
+  conceptKey: string;              // chave i18n para a introdução do conceito
+  questionKey: string;             // chave i18n para o rótulo da pergunta
+  explanationKey?: string;         // chave i18n para a explicação pós-resposta
 }
 
 export interface RhythmExercise extends BaseExercise {
   type: 'rhythm';
   bpm: number;
-  pattern: ('quarter' | 'eighth' | 'rest')[]; // beat pattern
+  pattern: ('quarter' | 'eighth' | 'rest')[]; // padrão rítmico
   toleranceMs: number;
 }
 
@@ -43,7 +43,7 @@ export interface IntervalExercise extends BaseExercise {
   type: 'interval';
   rootFreq: number;
   semitones: number;
-  options: number[];               // semitone options to present
+  options: number[];               // opções de semitons a apresentar
 }
 
 export interface ChordExercise extends BaseExercise {
@@ -80,7 +80,7 @@ export interface ExerciseResult {
   moduleId: ModuleId;
   correct: boolean;
   xpEarned: number;
-  attemptedAt: number;             // epoch ms
+  attemptedAt: number;             // timestamp em ms (epoch)
   durationMs: number;
 }
 
@@ -116,19 +116,19 @@ export interface UserProgress {
   xp: number;
   level: number;
   streak: number;
-  lastPracticeDate: string | null;  // ISO date string YYYY-MM-DD
+  lastPracticeDate: string | null;  // data no formato ISO YYYY-MM-DD
   unlockedModuleIds: ModuleId[];
   completedModuleIds: ModuleId[];
   earnedAchievementIds: string[];
   exerciseHistory: ExerciseResult[];
   dailyMissions: DailyMission[];
-  dailyMissionsDate: string | null; // ISO date string YYYY-MM-DD
+  dailyMissionsDate: string | null; // data no formato ISO YYYY-MM-DD
   totalPracticeMs: number;
 }
 
 // ── Settings ──────────────────────────────────
 export interface AppSettings {
-  volume: number;                  // 0–1
+  volume: number;                  // valor entre 0 e 1
   reduceAnimations: boolean;
   darkTheme: boolean;
 }

@@ -19,7 +19,7 @@ describe('PrimaryButtonComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  // ── Defaults ─────────────────────────────────────────────────────────────
+  // ── Valores padrão ──────────────────────────────────────────────────────────
 
   it('should default to primary variant', () => {
     expect(component.variant).toBe('primary');
@@ -33,7 +33,7 @@ describe('PrimaryButtonComponent', () => {
     expect(component.disabled).toBe(false);
   });
 
-  // ── Inputs ───────────────────────────────────────────────────────────────
+  // ── Entradas (inputs) ───────────────────────────────────────────────────────
 
   it('should apply secondary variant', () => {
     fixture.componentRef.setInput('variant', 'secondary');
@@ -63,7 +63,7 @@ describe('PrimaryButtonComponent', () => {
     expect(btn.getAttribute('aria-label')).toBe('Confirmar resposta');
   });
 
-  // ── Events ───────────────────────────────────────────────────────────────
+  // ── Eventos ──────────────────────────────────────────────────────────────────
 
   it('should emit clicked when the button is clicked', () => {
     const spy = vi.fn();

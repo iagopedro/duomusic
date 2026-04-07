@@ -1,6 +1,6 @@
 import { Exercise, NoteExercise, MelodyExercise } from '../core/models';
 
-// Base A4 = 440 Hz; semitone factor = 2^(1/12)
+// Base A4 = 440 Hz; fator de semitom = 2^(1/12)
 const A4 = 440;
 const st = (n: number) => A4 * Math.pow(2, n / 12);
 const C4 = st(-9);   // ~261.63 Hz
@@ -8,15 +8,15 @@ const D4 = st(-7);   // ~293.66 Hz
 const E4 = st(-5);   // ~329.63 Hz
 const F4 = st(-4);   // ~349.23 Hz
 const G4 = st(-2);   // ~392.00 Hz
-// const A4 used directly above
+// const A4 usada diretamente acima
 const B4 = st(2);    // ~493.88 Hz
 const C5 = st(3);    // ~523.25 Hz
 
-const q = 500;  // quarter note duration ms (120 bpm)
-const h = 1000; // half note duration ms
+const q = 500;  // duração de semínima em ms (120 bpm)
+const h = 1000; // duração de mínima em ms
 
 export const EXERCISES: Exercise[] = [
-  // ── Rhythm exercises ─────────────────────────────────────────────────────
+  // ── Exercícios de ritmo ──────────────────────────────────────────────────
   {
     id: 'r-1',
     moduleId: 'fundamentals',
@@ -54,7 +54,7 @@ export const EXERCISES: Exercise[] = [
     toleranceMs: 220,
   },
 
-  // ── Interval exercises ────────────────────────────────────────────────────
+  // ── Exercícios de intervalo ───────────────────────────────────────────────
   {
     id: 'i-1',
     moduleId: 'intervals',
@@ -65,7 +65,7 @@ export const EXERCISES: Exercise[] = [
     questionKey: 'exercise.interval.question',
     explanationKey: 'exercise.interval.desc',
     rootFreq: C4,
-    semitones: 4,   // major 3rd
+    semitones: 4,   // terça maior
     options: [3, 4, 5, 7],
   },
   {
@@ -78,7 +78,7 @@ export const EXERCISES: Exercise[] = [
     questionKey: 'exercise.interval.question',
     explanationKey: 'exercise.interval.desc',
     rootFreq: G4,
-    semitones: 7,   // perfect 5th
+    semitones: 7,   // quinta justa
     options: [4, 5, 7, 9],
   },
   {
@@ -91,7 +91,7 @@ export const EXERCISES: Exercise[] = [
     questionKey: 'exercise.interval.question',
     explanationKey: 'exercise.interval.desc',
     rootFreq: D4,
-    semitones: 3,   // minor 3rd
+    semitones: 3,   // terça menor
     options: [2, 3, 4, 5],
   },
   {
@@ -104,7 +104,7 @@ export const EXERCISES: Exercise[] = [
     questionKey: 'exercise.interval.question',
     explanationKey: 'exercise.interval.desc',
     rootFreq: E4,
-    semitones: 12,  // octave
+    semitones: 12,  // oitava
     options: [7, 9, 11, 12],
   },
   {
@@ -116,7 +116,7 @@ export const EXERCISES: Exercise[] = [
     conceptKey: 'exercise.interval.title',
     questionKey: 'exercise.interval.question',
     rootFreq: C4,
-    semitones: 9,   // major 6th
+    semitones: 9,   // sexta maior
     options: [7, 9, 10, 12],
   },
   {
@@ -128,11 +128,11 @@ export const EXERCISES: Exercise[] = [
     conceptKey: 'exercise.interval.title',
     questionKey: 'exercise.interval.question',
     rootFreq: A4,
-    semitones: 6,   // tritone
+    semitones: 6,   // trítono
     options: [5, 6, 7, 8],
   },
 
-  // ── Chord exercises ───────────────────────────────────────────────────────
+  // ── Exercícios de acorde ──────────────────────────────────────────────────
   {
     id: 'c-1',
     moduleId: 'chords',
@@ -172,7 +172,7 @@ export const EXERCISES: Exercise[] = [
     options: ['major', 'minor', 'dim', 'aug'],
   },
 
-  // ── Note-id exercises ─────────────────────────────────────────────────────
+  // ── Exercícios de identificação de nota ────────────────────────────────────
   {
     id: 'n-1',
     moduleId: 'fundamentals',
@@ -239,7 +239,7 @@ export const EXERCISES: Exercise[] = [
     showHint: false,
   } as NoteExercise,
 
-  // ── Melody exercises ──────────────────────────────────────────────────────
+  // ── Exercícios de melodia ─────────────────────────────────────────────────
   // Dó-Ré-Mi (escala de Dó ascendente — 3 notas)
   {
     id: 'm-1',

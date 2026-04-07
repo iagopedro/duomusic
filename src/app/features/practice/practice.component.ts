@@ -82,11 +82,11 @@ export class PracticeComponent implements OnInit, OnDestroy {
   readonly sessionXp = signal(0);
   readonly sessionResults = signal<ExerciseResult[]>([]);
 
-  // Note-id state
+  // Estado de identificação de nota
   readonly noteHintActive = signal(false);
   private noteHintTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Melody state
+  // Estado de melodia
   readonly melodyPhase = signal<'listen' | 'play'>('listen');
   readonly melodyStep = signal(0);          // qual nota o usuário deve tocar agora
   readonly melodyWrongNote = signal<string | null>(null);
@@ -94,7 +94,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private melodyTimers: ReturnType<typeof setTimeout>[] = [];
   private melodyPlayingNote = signal<string | null>(null); // tecla acesa durante reprodução
 
-  // Rhythm state
+  // Estado de ritmo
   readonly tapping = signal(false);
   readonly tappedBeats = signal<boolean[]>([]);
   readonly activeBeat = signal(-1);
@@ -240,7 +240,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.resetExerciseState();
     // Inicia trilha de fundo (mantém pipeline Bluetooth ativo)
     this.audio.resume().then(() => this.bgTrack.start(this.moduleId));
-    // Auto-play audio exercises
+    // Reprodução automática do exercício de áudio
     setTimeout(() => this.playCurrentExercise(), 500);
   }
 
@@ -293,7 +293,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   selectNoteAndSubmit(note: string): void {
     this.selectAnswer(note);
-    // Small delay so the key highlight renders before feedback transition
+    // Pequeno delay para a tecla iluminada renderizar antes da transição de feedback
     setTimeout(() => this.submitAnswer(), 150);
   }
 
@@ -377,7 +377,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
       // ─────────────────────────────────────────────────────────────────────
       const audioStart = this.audio.getScheduleStart(); // ctx.currentTime + offset
 
-      // Countdown: ticks 3, 2, 1
+      // Contagem regressiva: ticks 3, 2, 1
       this.audio.playMetronomeTick(false, audioStart);
       this.audio.playMetronomeTick(false, audioStart + sBeat);
       this.audio.playMetronomeTick(false, audioStart + 2 * sBeat);
@@ -439,7 +439,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     const now = Date.now();
     this.rhythmTapTimes.push(now);
 
-    // Mark the closest non-rest beat as tapped for visual feedback & submit enablement
+    // Marca o beat mais próximo (não-rest) como tocado para feedback visual e habilitar envio
     if (this.rhythmExpectedTimes.length > 0) {
       const ex = this.currentExercise() as RhythmExercise;
       if (ex) {
@@ -469,7 +469,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     if (!ex) return;
     this.clearRhythmTimer();
 
-    // Evaluate: for each expected tap (non-rest beats), check closest tap time
+    // Avalia: para cada batida esperada (não-rest), verifica o toque mais próximo no tempo
     const nonRestIndices = ex.pattern
       .map((b, i) => ({ b, i }))
       .filter(x => x.b !== 'rest')
@@ -572,7 +572,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.rhythmExpectedTimes = [];
     this.rhythmBeatIndex = 0;
     this.clearRhythmTimer();
-    // Melody reset
+    // Reinicia estado de melodia
     this.melodyPhase.set('listen');
     this.melodyStep.set(0);
     this.melodyPlayedNotes.set([]);

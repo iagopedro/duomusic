@@ -18,7 +18,7 @@ describe('StorageService', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  // ── get ─────────────────────────────────────────────────────────────────
+  // ── método get() ──────────────────────────────────────────────────────────
 
   it('should be created', () => {
     expect(service).toBeTruthy();
@@ -48,7 +48,7 @@ describe('StorageService', () => {
     expect(service.get<boolean>('flag', false)).toBe(true);
   });
 
-  // ── set ─────────────────────────────────────────────────────────────────
+  // ── método set() ──────────────────────────────────────────────────────────
 
   it('set() should persist a JSON-serialised value', () => {
     service.set('key', { x: 99 });
@@ -60,7 +60,7 @@ describe('StorageService', () => {
     expect(() => service.set('key', 'val')).not.toThrow();
   });
 
-  // ── remove ───────────────────────────────────────────────────────────────
+  // ── método remove() ────────────────────────────────────────────────────────
 
   it('remove() should delete the key', () => {
     store['toRemove'] = '"value"';
@@ -68,7 +68,7 @@ describe('StorageService', () => {
     expect(store['toRemove']).toBeUndefined();
   });
 
-  // ── clear ────────────────────────────────────────────────────────────────
+  // ── método clear() ─────────────────────────────────────────────────────────
 
   it('clear() should empty all keys', () => {
     store['a'] = '"1"';

@@ -5,12 +5,12 @@ import { PT_BR, I18nKey } from './pt-br';
 export class I18nService {
   private readonly locale = PT_BR;
 
-  /** Typed lookup — IDE autocomplete provides key suggestions. */
+  /** Busca tipada — o autocomplete da IDE sugere as chaves disponíveis. */
   t(key: I18nKey, params?: Record<string, string | number>): string {
     return this.translate(key as string, params);
   }
 
-  /** Untyped lookup — use when key is a runtime string value. */
+  /** Busca sem tipagem — use quando a chave é uma string resolvida em tempo de execução. */
   tStr(key: string, params?: Record<string, string | number>): string {
     return this.translate(key, params);
   }

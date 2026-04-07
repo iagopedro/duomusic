@@ -16,7 +16,7 @@ export class StorageService {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch {
-      // Storage may be full or unavailable; fail silently
+      // Armazenamento cheio ou indisponível; ignora silenciosamente
     }
   }
 

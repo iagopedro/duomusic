@@ -31,7 +31,7 @@ describe('ModuleCardComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  // ── Name & Description ───────────────────────────────────────────────────
+  // ── Nome e descrição ──────────────────────────────────────────────────────
 
   it('should display the translated module name', () => {
     const name = fixture.nativeElement.querySelector('.module-card__name');
@@ -43,7 +43,7 @@ describe('ModuleCardComponent', () => {
     expect(desc.textContent).toContain('Notas, ritmo básico');
   });
 
-  // ── Locked state ─────────────────────────────────────────────────────────
+  // ── Estado bloqueado ────────────────────────────────────────────────────────
 
   it('should add locked CSS class when locked=true', () => {
     fixture.componentRef.setInput('locked', true);
@@ -74,7 +74,7 @@ describe('ModuleCardComponent', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  // ── Completed state ──────────────────────────────────────────────────────
+  // ── Estado concluído ────────────────────────────────────────────────────────
 
   it('should add completed CSS class when completed=true', () => {
     fixture.componentRef.setInput('completed', true);
@@ -89,7 +89,7 @@ describe('ModuleCardComponent', () => {
     expect(component.ariaLabel).toContain('Concluído');
   });
 
-  // ── Available state ──────────────────────────────────────────────────────
+  // ── Estado disponível ───────────────────────────────────────────────────────
 
   it('ariaLabel should contain "Disponível" when not locked and not completed', () => {
     fixture.componentRef.setInput('locked', false);

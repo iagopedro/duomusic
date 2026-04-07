@@ -13,7 +13,7 @@ import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-p
 interface OnboardingStep {
   titleKey: string;
   descKey: string;
-  illustration: string; // emoji / icon
+  illustration: string; // emoji ou ícone
   gradient: string;
 }
 

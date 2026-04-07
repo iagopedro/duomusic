@@ -23,11 +23,11 @@ export class SettingsService {
   readonly settings = this._settings.asReadonly();
 
   constructor() {
-    // Sync volume to AudioService on startup
+    // Sincroniza volume com o AudioService na inicialização
     this.audio.setMasterVolume(this._settings().volume);
-    // Apply theme class on startup
+    // Aplica classe de tema na inicialização
     this.applyTheme(this._settings().darkTheme);
-    // Apply reduce-motion on startup
+    // Aplica reduce-motion na inicialização
     this.applyReduceMotion(this._settings().reduceAnimations);
   }
 

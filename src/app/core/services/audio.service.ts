@@ -93,7 +93,7 @@ export class AudioService {
     return this.getMaster();
   }
 
-  /** Resume AudioContext after a user gesture (required by some browsers). */
+  /** Retoma o AudioContext após gesto do usuário (exigido por alguns navegadores). */
   async resume(): Promise<void> {
     const ctx = this.getCtx();
     if (ctx.state === 'suspended') {
@@ -126,7 +126,7 @@ export class AudioService {
     const now = startAt ?? (ctx.currentTime + this.scheduleOffset());
     const dur = durationMs / 1000;
 
-    // Simple ADSR envelope
+    // Envelope ADSR simples
     envGain.gain.setValueAtTime(0, now);
     envGain.gain.linearRampToValueAtTime(0.8, now + 0.01);
     envGain.gain.setValueAtTime(0.8, now + dur - 0.05);

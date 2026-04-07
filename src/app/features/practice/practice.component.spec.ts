@@ -281,7 +281,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     const { component } = await createFixture('fundamentals');
     component.startPractice();
     component.handleTap();
-    // rhythmExpectedTimes is empty until startRhythm() runs, so no beat is marked
+    // rhythmExpectedTimes está vazio até startRhythm() ser executado, nenhum beat é marcado
     expect(component.tappedBeats().some(b => b)).toBe(false);
   });
 
@@ -304,7 +304,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     const { component } = await createFixture('fundamentals');
     component.startPractice();
     component.startRhythm();
-    // audio.resume() returns an already-resolved promise; flush its .then() microtask
+    // audio.resume() retorna uma promise já resolvida; flush do microtask .then()
     await Promise.resolve();
     expect(component.countdown()).toBe(3);
   });
@@ -316,7 +316,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     const ex = component.currentExercise() as any;
     const msBeat = (60 / ex.bpm) * 1000;
 
-    // Inject expected times as if the countdown finished
+    // Injeta tempos esperados como se a contagem regressiva tivesse terminado
     const now = Date.now();
     let cumulative = 0;
     component['rhythmExpectedTimes'] = ex.pattern.map((note: string) => {
@@ -326,7 +326,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     });
     component.tappedBeats.set(new Array(ex.pattern.length).fill(false));
 
-    // Tap each non-rest beat exactly at expected time
+    // Toca cada beat não-rest exatamente no tempo esperado
     for (let i = 0; i < ex.pattern.length; i++) {
       if (ex.pattern[i] !== 'rest') {
         component['rhythmTapTimes'].push(component['rhythmExpectedTimes'][i]);
@@ -351,7 +351,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     const msBeat = (60 / ex.bpm) * 1000;
     const now = Date.now();
     let cumulative = 0;
-    // Expected times 5 seconds in the past — no tap can match within tolerance
+    // Tempos esperados 5 segundos no passado — nenhum toque pode corresponder dentro da tolerância
     component['rhythmExpectedTimes'] = ex.pattern.map((note: string) => {
       const t = now - 5000 + cumulative;
       cumulative += note === 'eighth' ? msBeat / 2 : msBeat;

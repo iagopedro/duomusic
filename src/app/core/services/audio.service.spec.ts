@@ -37,7 +37,7 @@ describe('AudioService', () => {
     vi.clearAllMocks();
     mockCtx.createOscillator.mockReturnValue(mockOscillator);
     mockCtx.createGain.mockReturnValue(mockGainNode);
-    // AudioContext is a class — must use 'function' keyword (not arrow) for class mock
+    // AudioContext é uma classe — usar 'function' (não arrow) para mock de classe
     (window as any).AudioContext = vi.fn().mockImplementation(function(this: any) {
       return mockCtx;
     });
