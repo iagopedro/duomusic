@@ -163,6 +163,100 @@
             >{{ i18n.t('practice.submit') }}</app-primary-button>
           </app-glass-panel>
         </ng-container>
+
+        <!-- Note-id exercise -->
+        <ng-container *ngIf="currentExercise()?.type === 'note-id'">
+          <app-glass-panel class="practice__exercise-card practice__exercise-card--note">
+            <h2 class="practice__q-label">{{ i18n.t('exercise.note.question') }}</h2>
+            <p class="practice__note-hint-text" *ngIf="noteHintKey()">
+              {{ i18n.t('exercise.note.hint') }}
+            </p>
+            <p class="practice__note-hint-text practice__note-hint-text--find" *ngIf="!noteHintKey()">
+              {{ i18n.t('exercise.note.find') }}
+            </p>
+            <button
+              class="practice__play-btn"
+              (click)="playCurrentExercise()"
+              [attr.aria-label]="i18n.t('practice.play.again')"
+            >
+              <mat-icon aria-hidden="true">volume_up</mat-icon>
+              {{ i18n.t('practice.play.again') }}
+            </button>
+            <app-piano-keyboard
+              [highlightedNote]="noteHintKey()"
+              [selectedNote]="$any(selectedAnswer())"
+              [disabled]="!!noteHintKey()"
+              (noteTapped)="selectNoteAndSubmit($event)"
+            />
+          </app-glass-panel>
+        </ng-container>
+
+        <!-- Melody exercise -->
+        <ng-container *ngIf="currentExercise()?.type === 'melody'">
+          <app-glass-panel class="practice__exercise-card practice__exercise-card--melody">
+
+            <!-- FASE LISTEN: ouvir a melodia -->
+            <ng-container *ngIf="melodyPhase() === 'listen'">
+              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.listen') }}</h2>
+              <div class="practice__melody-notes">
+                <span
+                  *ngFor="let n of $any(currentExercise())?.notes; trackBy: trackByIndex"
+                  class="practice__melody-dot"
+                  [class.practice__melody-dot--active]="melodyHighlightNote() === n.note"
+                >●</span>
+              </div>
+              <app-piano-keyboard
+                [highlightedNote]="melodyHighlightNote()"
+                [disabled]="true"
+              />
+              <div class="practice__melody-actions">
+                <button
+                  class="practice__play-btn"
+                  (click)="playCurrentExercise()"
+                  [attr.aria-label]="i18n.t('practice.play.again')"
+                >
+                  <mat-icon aria-hidden="true">volume_up</mat-icon>
+                  {{ i18n.t('practice.play.again') }}
+                </button>
+                <app-primary-button
+                  style="width: 100%"
+                  (clicked)="startMelodyPlay()"
+                  [ariaLabel]="i18n.t('exercise.melody.start')"
+                >
+                  <mat-icon aria-hidden="true">piano</mat-icon>
+                  {{ i18n.t('exercise.melody.start') }}
+                </app-primary-button>
+              </div>
+            </ng-container>
+
+            <!-- FASE PLAY: tocar a melodia -->
+            <ng-container *ngIf="melodyPhase() === 'play'">
+              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.play') }}</h2>
+              <div class="practice__melody-progress">
+                <span
+                  *ngFor="let n of $any(currentExercise())?.notes; let i = index; trackBy: trackByIndex"
+                  class="practice__melody-step"
+                  [class.practice__melody-step--done]="i < melodyStep()"
+                  [class.practice__melody-step--current]="i === melodyStep()"
+                >{{ n.note.replace(/\d/, '') }}</span>
+              </div>
+              <app-piano-keyboard
+                [highlightedNote]="melodyExpectedNote()"
+                [wrongNote]="melodyWrongNote()"
+                [disabled]="false"
+                (noteTapped)="tapMelodyNote($event)"
+              />
+              <button
+                class="practice__play-btn practice__play-btn--subtle"
+                (click)="melodyPhase.set('listen'); playCurrentExercise()"
+              >
+                <mat-icon aria-hidden="true">replay</mat-icon>
+                {{ i18n.t('exercise.melody.replay') }}
+              </button>
+            </ng-container>
+
+          </app-glass-panel>
+        </ng-container>
       </div>
 
       <!-- PHASE: feedback -->

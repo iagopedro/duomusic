@@ -4,7 +4,7 @@
 
 export type ChordType = 'major' | 'minor' | 'dim' | 'aug';
 export type OscillatorType = 'sine' | 'square' | 'triangle' | 'sawtooth';
-export type ExerciseType = 'rhythm' | 'interval' | 'chord';
+export type ExerciseType = 'rhythm' | 'interval' | 'chord' | 'note-id' | 'melody';
 export type ModuleId = 'fundamentals' | 'intervals' | 'scales' | 'chords' | 'mixed';
 
 // ── Module ────────────────────────────────────
@@ -53,7 +53,26 @@ export interface ChordExercise extends BaseExercise {
   options: ChordType[];
 }
 
-export type Exercise = RhythmExercise | IntervalExercise | ChordExercise;
+export interface NoteExercise extends BaseExercise {
+  type: 'note-id';
+  noteFreq: number;   // frequência da nota a tocar e identificar
+  noteName: string;   // resposta correta, ex.: 'C4'
+  showHint: boolean;  // pisca brevemente a tecla-alvo antes de esconder
+}
+
+export interface MelodyNote {
+  note: string;       // ex: 'C4'
+  freq: number;
+  durationMs: number;
+}
+
+export interface MelodyExercise extends BaseExercise {
+  type: 'melody';
+  notes: MelodyNote[];
+  bpm: number;
+}
+
+export type Exercise = RhythmExercise | IntervalExercise | ChordExercise | NoteExercise | MelodyExercise;
 
 // ── Exercise Result ───────────────────────────
 export interface ExerciseResult {

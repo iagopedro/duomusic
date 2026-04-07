@@ -1,0 +1,24 @@
+<div class="piano" role="group" aria-label="Teclado de piano">
+  <div
+    *ngFor="let key of keys; trackBy: trackByNote"
+    class="piano__white-wrap"
+    [class.piano__white-wrap--has-black]="key.blackAfter"
+  >
+    <button
+      class="piano__key"
+      [class.piano__key--highlighted]="highlightedNote === key.note"
+      [class.piano__key--selected]="selectedNote === key.note"
+      [class.piano__key--wrong]="wrongNote === key.note"
+      [class.piano__key--pressed]="pressedNote() === key.note"
+      [disabled]="disabled"
+      [attr.aria-label]="'Nota ' + key.note"
+      [attr.aria-pressed]="selectedNote === key.note"
+      (click)="tapKey(key)"
+      (keydown.enter)="tapKey(key)"
+      (keydown.space)="tapKey(key)"
+    >
+      <span class="piano__key-label">{{ key.label }}</span>
+    </button>
+    <div *ngIf="key.blackAfter" class="piano__black-key" aria-hidden="true"></div>
+  </div>
+</div>

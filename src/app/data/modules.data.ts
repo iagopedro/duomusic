@@ -4,12 +4,12 @@ export const MODULES: Module[] = [
   {
     id: 'fundamentals',
     nameKey: 'module.fundamentals',
-    description: 'Notas, ritmo básico e leitura de padrões.',
-    icon: 'music_note',
+    description: 'Conheça as notas musicais tocando num teclado interativo.',
+    icon: 'piano',
     color: '#22c55e',
     order: 0,
     minXpToUnlock: 0,
-    exerciseIds: ['r-1', 'r-2', 'r-3'],
+    exerciseIds: ['n-1', 'n-2', 'r-1', 'n-3', 'm-1', 'm-5', 'n-4', 'r-2', 'm-2', 'n-5', 'm-3', 'r-3', 'm-4', 'm-6'],
   },
   {
     id: 'intervals',

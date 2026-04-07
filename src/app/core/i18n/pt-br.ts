@@ -78,6 +78,21 @@ export const PT_BR = {
   'exercise.interval.title': 'Treino de intervalos',
   'exercise.interval.desc': 'Ouça o intervalo e identifique o tipo.',
   'exercise.interval.question': 'Que intervalo você ouviu?',
+
+  // Note exercises
+  'exercise.note.title': 'Notas musicais',
+  'exercise.note.question': 'Qual nota você ouviu? Toque-a no teclado!',
+  'exercise.note.desc': 'Aprenda a identificar notas pelo som.',
+  'exercise.note.hint': '✨ Observe a tecla destacada e ouça seu som!',
+  'exercise.note.find': '🎹 Toque a nota que você ouviu',
+
+  'exercise.melody.title': 'Repetir melodia',
+  'exercise.melody.question': 'Ouça a melodia e depois repita no piano.',
+  'exercise.melody.listen': '🎵 Ouça a melodia com atenção',
+  'exercise.melody.start': 'Repetir no piano',
+  'exercise.melody.play': '🎹 Toque as notas na ordem certa',
+  'exercise.melody.replay': 'Ouvir novamente',
+  'exercise.melody.desc': 'Treine sua memória musical repetindo melodias.',
   'exercise.chord.title': 'Qualidade do acorde',
   'exercise.chord.desc': 'Ouça o acorde e identifique se é maior ou menor.',
   'exercise.chord.question': 'Que tipo de acorde você ouviu?',

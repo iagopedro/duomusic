@@ -175,7 +175,7 @@ export class BackgroundTrackService {
   unduck(): void {
     if (!this.trackGain || !this.ducked) return;
     const ctx = this.audio.getAudioContext();
-    this.trackGain.gain.setTargetAtTime(this.currentVolume, ctx.currentTime, 0.3);
+    this.trackGain.gain.setTargetAtTime(this.currentVolume, ctx.currentTime, 3.0);
     this.ducked = false;
   }
 

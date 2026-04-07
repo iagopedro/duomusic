@@ -1,0 +1,120 @@
+.piano {
+  display: flex;
+  gap: 0;
+  padding: 1rem 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 0 0 12px 12px;
+  justify-content: center;
+  align-items: flex-start;
+
+  &__white-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    max-width: 56px;
+    margin-right: 3px;
+
+    &:last-child { margin-right: 0; }
+
+    // Espaço extra à direita para acomodar a tecla preta sobreposta
+    &--has-black {
+      margin-right: 0;
+    }
+  }
+
+  &__key {
+    width: 100%;
+    height: 120px;
+    border-radius: 0 0 8px 8px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    transition: background 0.1s, transform 0.08s, box-shadow 0.1s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35), inset 0 -2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
+    outline: none;
+
+    &:focus-visible {
+      box-shadow: 0 0 0 3px var(--color-primary), 0 4px 8px rgba(0,0,0,0.35);
+    }
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(180deg, #ffffff 0%, #ebebeb 100%);
+      transform: scaleY(0.97);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    &--pressed {
+      background: linear-gradient(180deg, #d8d8d8 0%, #c8c8c8 100%) !important;
+      transform: scaleY(0.96) !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(0,0,0,0.2) !important;
+    }
+
+    &--highlighted {
+      background: linear-gradient(180deg, #fde68a 0%, #fbbf24 100%) !important;
+      border-color: #f59e0b;
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.5), inset 0 -2px 4px rgba(0,0,0,0.1);
+      animation: piano-pulse 0.7s ease-in-out infinite alternate;
+    }
+
+    &--selected {
+      background: linear-gradient(180deg, #a5f3fc 0%, #22d3ee 100%) !important;
+      border-color: #0891b2;
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.45), inset 0 -2px 4px rgba(0,0,0,0.1);
+    }
+
+    &--wrong {
+      background: linear-gradient(180deg, #fca5a5 0%, #f87171 100%) !important;
+      border-color: #dc2626;
+      box-shadow: 0 4px 12px rgba(248, 113, 113, 0.5), inset 0 -2px 4px rgba(0,0,0,0.1);
+      animation: piano-shake 0.35s ease-in-out;
+    }
+  }
+
+  &__black-key {
+    position: absolute;
+    top: 0;
+    right: -9px;
+    width: 18px;
+    height: 72px;
+    background: linear-gradient(180deg, #2a2a2a 0%, #111 100%);
+    border-radius: 0 0 4px 4px;
+    border: 1px solid #000;
+    z-index: 2;
+    box-shadow: 2px 4px 6px rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+
+  &__key-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #555;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  &__key--highlighted &__key-label,
+  &__key--selected &__key-label {
+    color: #1a1a1a;
+  }
+}
+
+@keyframes piano-pulse {
+  from { box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4); }
+  to   { box-shadow: 0 4px 20px rgba(251, 191, 36, 0.8); }
+}
+
+@keyframes piano-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px); }
+  60%       { transform: translateX(4px); }
+}

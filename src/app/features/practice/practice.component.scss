@@ -75,7 +75,29 @@
         font-size: 0.9rem;
       }
 
-      &__exercise-card { display: block; }
+      &__exercise-card {
+        display: block;
+
+        &--note {
+          padding-left: 0;
+          padding-right: 0;
+          overflow: hidden;
+        }
+      }
+
+      &__note-hint-text {
+        text-align: center;
+        font-size: 0.95rem;
+        color: var(--color-on-surface-muted);
+        margin: 0 1rem 0.75rem;
+        min-height: 1.4rem;
+        transition: color 0.3s;
+
+        &--find {
+          color: var(--color-primary);
+          font-weight: 600;
+        }
+      }
 
       &__q-label {
         font-size: 1.05rem;
@@ -232,6 +254,81 @@
         gap: 0.75rem;
         margin-top: 0.5rem;
         app-primary-button { flex: 1; }
+      }
+
+      // Melody styles
+      &__exercise-card--melody {
+        padding-bottom: 1rem;
+      }
+
+      &__melody-notes {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      &__melody-dot {
+        font-size: 1.25rem;
+        color: var(--color-on-surface-muted);
+        transition: color 0.15s, transform 0.15s;
+
+        &--active {
+          color: #fbbf24;
+          transform: scale(1.5);
+        }
+      }
+
+      &__melody-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      &__melody-progress {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+
+      &__melody-step {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: var(--glass-bg);
+        border: 1.5px solid var(--glass-border);
+        color: var(--color-on-surface-muted);
+        transition: all 0.2s;
+
+        &--done {
+          background: color-mix(in srgb, #22c55e 25%, transparent);
+          border-color: #22c55e;
+          color: #22c55e;
+        }
+
+        &--current {
+          background: color-mix(in srgb, #fbbf24 25%, transparent);
+          border-color: #f59e0b;
+          color: #92400e;
+          animation: piano-pulse 0.7s ease-in-out infinite alternate;
+        }
+      }
+
+      &__play-btn--subtle {
+        background: transparent;
+        border-color: transparent;
+        color: var(--color-on-surface-muted);
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        margin-bottom: 0;
       }
 
       // Feedback
