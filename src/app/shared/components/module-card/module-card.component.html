@@ -1,33 +1,43 @@
 
     <div
       class="module-card"
-      [class.module-card--locked]="locked"
-      [class.module-card--completed]="completed"
-      [style.--card-color]="module.color"
+      [class.module-card--locked]="locked()"
+      [class.module-card--completed]="completed()"
+      [style.--card-color]="module().color"
       matRipple
-      [matRippleDisabled]="locked"
-      [attr.role]="locked ? 'listitem' : 'button'"
-      [attr.tabindex]="locked ? null : 0"
+      [matRippleDisabled]="locked()"
+      [attr.role]="locked() ? 'listitem' : 'button'"
+      [attr.tabindex]="locked() ? null : 0"
       [attr.aria-label]="ariaLabel"
-      [attr.aria-disabled]="locked"
-      (click)="!locked && cardClicked.emit(module)"
-      (keydown.enter)="!locked && cardClicked.emit(module)"
-      (keydown.space)="!locked && cardClicked.emit(module)"
+      [attr.aria-disabled]="locked()"
+      (click)="!locked() && cardClicked.emit(module())"
+      (keydown.enter)="!locked() && cardClicked.emit(module())"
+      (keydown.space)="!locked() && cardClicked.emit(module())"
     >
       <div class="module-card__icon-wrap">
-        <mat-icon class="module-card__icon">{{ module.icon }}</mat-icon>
-        <mat-icon *ngIf="locked" class="module-card__lock">lock</mat-icon>
-        <mat-icon *ngIf="completed && !locked" class="module-card__check">check_circle</mat-icon>
+        <mat-icon class="module-card__icon">{{ module().icon }}</mat-icon>
+        @if (locked()) {
+          <mat-icon class="module-card__lock">lock</mat-icon>
+        }
+        @if (completed() && !locked()) {
+          <mat-icon class="module-card__check">check_circle</mat-icon>
+        }
       </div>
       <div class="module-card__content">
         <span class="module-card__name">{{ moduleName() }}</span>
-        <span class="module-card__desc">{{ module.description }}</span>
-        <span class="module-card__status" *ngIf="locked">
-          {{ i18n.t('home.modules.locked') }}
-        </span>
-        <span class="module-card__status module-card__status--done" *ngIf="completed">
-          {{ i18n.t('home.modules.completed') }}
-        </span>
+        <span class="module-card__desc">{{ module().description }}</span>
+        @if (locked()) {
+          <span class="module-card__status">
+            {{ i18n.t('home.modules.locked') }}
+          </span>
+        }
+        @if (completed()) {
+          <span class="module-card__status module-card__status--done">
+            {{ i18n.t('home.modules.completed') }}
+          </span>
+        }
       </div>
-      <mat-icon class="module-card__arrow" *ngIf="!locked">chevron_right</mat-icon>
+      @if (!locked()) {
+        <mat-icon class="module-card__arrow">chevron_right</mat-icon>
+      }
     </div>

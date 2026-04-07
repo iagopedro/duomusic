@@ -24,39 +24,45 @@
       </app-glass-panel>
 
       <!-- Daily Missions -->
-      <section class="home__section" *ngIf="missions().length">
-        <h2 class="home__section-title">{{ i18n.t('home.missions.title') }}</h2>
-        <div class="home__missions-list">
-          <app-glass-panel
-            *ngFor="let m of missions(); trackBy: trackById"
-            class="home__mission"
-            padding="0.875rem 1rem"
-          >
-            <div class="home__mission-inner">
-              <mat-icon class="home__mission-icon" [class.done]="m.completed">
-                {{ m.completed ? 'check_circle' : 'radio_button_unchecked' }}
-              </mat-icon>
-              <div class="home__mission-text">
-                <span class="home__mission-desc">{{ m.descriptionKey }}</span>
-                <span class="home__mission-progress">{{ m.current }}/{{ m.target }}</span>
-              </div>
-              <span class="home__mission-xp">+{{ m.xpReward }} XP</span>
-            </div>
-          </app-glass-panel>
-        </div>
-      </section>
+      @if (missions().length) {
+        <section class="home__section">
+          <h2 class="home__section-title">{{ i18n.t('home.missions.title') }}</h2>
+          <div class="home__missions-list">
+            @for (m of missions(); track m.id) {
+              <app-glass-panel
+                class="home__mission"
+                padding="0.875rem 1rem"
+              >
+                <div class="home__mission-inner">
+                  <mat-icon class="home__mission-icon" [class.done]="m.completed">
+                    {{ m.completed ? 'check_circle' : 'radio_button_unchecked' }}
+                  </mat-icon>
+                  <div class="home__mission-text">
+                    <span class="home__mission-desc">{{ m.descriptionKey }}</span>
+                    <span class="home__mission-progress">{{ m.current }}/{{ m.target }}</span>
+                  </div>
+                  <span class="home__mission-xp">+{{ m.xpReward }} XP</span>
+                </div>
+              </app-glass-panel>
+            }
+          </div>
+        </section>
+      }
 
       <!-- Recent badges -->
-      <section class="home__section" *ngIf="recentBadges().length">
-        <h2 class="home__section-title">{{ i18n.t('home.badges.title') }}</h2>
-        <div class="home__badges-row">
-          <app-badge-chip
-            *ngFor="let b of recentBadges(); trackBy: trackById"
-            [achievement]="b"
-            [locked]="false"
-          />
-        </div>
-      </section>
+      @if (recentBadges().length) {
+        <section class="home__section">
+          <h2 class="home__section-title">{{ i18n.t('home.badges.title') }}</h2>
+          <div class="home__badges-row">
+            @for (b of recentBadges(); track b.id) {
+              <app-badge-chip
+                [achievement]="b"
+                [locked]="false"
+              />
+            }
+          </div>
+        </section>
+      }
 
       <!-- CTA -->
       <div class="home__cta-row">
@@ -75,13 +81,14 @@
       <section class="home__section">
         <h2 class="home__section-title">{{ i18n.t('home.modules.title') }}</h2>
         <div class="home__modules-list">
-          <app-module-card
-            *ngFor="let mod of modules; trackBy: trackByModuleId"
-            [module]="mod"
-            [locked]="!isUnlocked(mod)"
-            [completed]="isCompleted(mod)"
-            (cardClicked)="openModule($event)"
-          />
+          @for (mod of modules; track mod.id) {
+            <app-module-card
+              [module]="mod"
+              [locked]="!isUnlocked(mod)"
+              [completed]="isCompleted(mod)"
+              (cardClicked)="openModule($event)"
+            />
+          }
         </div>
       </section>
 

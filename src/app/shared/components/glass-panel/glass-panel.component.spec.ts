@@ -3,7 +3,6 @@ import { GlassPanelComponent } from './glass-panel.component';
 import { Component } from '@angular/core';
 
 @Component({
-  standalone: true,
   imports: [GlassPanelComponent],
   template: `<app-glass-panel><span class="inner">content</span></app-glass-panel>`,
 })

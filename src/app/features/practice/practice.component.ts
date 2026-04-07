@@ -1,7 +1,6 @@
 import {
   Component, ChangeDetectionStrategy, signal, computed, OnInit, OnDestroy, inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -33,9 +32,8 @@ const INTERVAL_NAMES: Record<number, string> = {
 
 @Component({
   selector: 'app-practice',
-  standalone: true,
   imports: [
-    CommonModule, MatIconModule,
+    MatIconModule,
     GlassPanelComponent, PrimaryButtonComponent, XpBarComponent, PianoKeyboardComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -153,6 +151,12 @@ export class PracticeComponent implements OnInit, OnDestroy {
       return (ex as NoteExercise).noteName;
     }
     return null;
+  });
+
+  readonly melodyNotes = computed(() => {
+    const ex = this.currentExercise();
+    if (ex?.type === 'melody') return (ex as MelodyExercise).notes;
+    return [];
   });
 
   // Tecla que deve ser tocada neste instante do exercício de melodia
@@ -527,8 +531,6 @@ export class PracticeComponent implements OnInit, OnDestroy {
   chordLabel(type: ChordType): string {
     return this.i18n.tStr('chord.' + type);
   }
-
-  trackByIndex(index: number): number { return index; }
 
   private finishExercise(correct: boolean, xpEarned: number): void {
     const ex = this.currentExercise()!;

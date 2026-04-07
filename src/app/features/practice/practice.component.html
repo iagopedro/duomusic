@@ -6,22 +6,26 @@
           <mat-icon>arrow_back</mat-icon>
         </button>
         <span class="practice__module-name">{{ moduleName() }}</span>
-        <span class="practice__counter" *ngIf="phase() !== 'intro' && phase() !== 'result'">
-          {{ i18n.t('practice.exercise.of', { n: currentIndex() + 1, total: exercises().length }) }}
-        </span>
+        @if (phase() !== 'intro' && phase() !== 'result') {
+          <span class="practice__counter">
+            {{ i18n.t('practice.exercise.of', { n: currentIndex() + 1, total: exercises().length }) }}
+          </span>
+        }
       </header>
 
       <!-- Progress bar -->
-      <app-xp-bar
-        *ngIf="phase() !== 'intro' && phase() !== 'result'"
-        [current]="currentIndex()"
-        [max]="exercises().length"
-        [ariaLabel]="'Progresso: exercício ' + (currentIndex() + 1) + ' de ' + exercises().length"
-        class="practice__progress"
-      />
+      @if (phase() !== 'intro' && phase() !== 'result') {
+        <app-xp-bar
+          [current]="currentIndex()"
+          [max]="exercises().length"
+          [ariaLabel]="'Progresso: exercício ' + (currentIndex() + 1) + ' de ' + exercises().length"
+          class="practice__progress"
+        />
+      }
 
       <!-- PHASE: intro -->
-      <div *ngIf="phase() === 'intro'" class="practice__phase" [@fadeSlide]>
+      @if (phase() === 'intro') {
+        <div class="practice__phase" [@fadeSlide]>
         <app-glass-panel class="practice__intro-card">
           <div class="practice__intro-content">
             <span class="practice__intro-icon">🎯</span>
@@ -40,11 +44,13 @@
           </div>
         </app-glass-panel>
       </div>
+      }
 
       <!-- PHASE: exercise -->
-      <div *ngIf="phase() === 'exercise'" class="practice__phase" [@fadeSlide]>
+      @if (phase() === 'exercise') {
+        <div class="practice__phase" [@fadeSlide]>
         <!-- Rhythm exercise -->
-        <ng-container *ngIf="currentExercise()?.type === 'rhythm'">
+        @if (currentExercise()?.type === 'rhythm') {
           <app-glass-panel class="practice__exercise-card">
             <h2 class="practice__q-label">{{ i18n.t('exercise.rhythm.hint') }}</h2>
             <div class="practice__rhythm-pattern">
@@ -56,15 +62,16 @@
                   {{ countdown() === 0 ? 'GO!' : countdown() }}
                 </div>
               }
-              <div
-                *ngFor="let beat of rhythmBeats(); let i = index; trackBy: trackByIndex"
-                class="practice__beat"
-                [class.practice__beat--active]="activeBeat() === i"
-                [class.practice__beat--tapped]="tappedBeats()[i]"
-                [ngClass]="'practice__beat--' + beat"
-              >
-                <span>{{ beat === 'quarter' ? '♩' : beat === 'eighth' ? '♪' : '𝄽' }}</span>
-              </div>
+              @for (beat of rhythmBeats(); track $index; let i = $index) {
+                <div
+                  class="practice__beat"
+                  [class.practice__beat--active]="activeBeat() === i"
+                  [class.practice__beat--tapped]="tappedBeats()[i]"
+                  [class]="'practice__beat--' + beat"
+                >
+                  <span>{{ beat === 'quarter' ? '♩' : beat === 'eighth' ? '♪' : '𝄽' }}</span>
+                </div>
+              }
             </div>
             <div class="practice__rhythm-controls">
               <button
@@ -96,10 +103,10 @@
               >{{ i18n.t('practice.submit') }}</app-primary-button>
             </div>
           </app-glass-panel>
-        </ng-container>
+        }
 
         <!-- Interval exercise -->
-        <ng-container *ngIf="currentExercise()?.type === 'interval'">
+        @if (currentExercise()?.type === 'interval') {
           <app-glass-panel class="practice__exercise-card">
             <h2 class="practice__q-label">{{ i18n.t('exercise.interval.question') }}</h2>
             <button
@@ -111,16 +118,17 @@
               {{ i18n.t('practice.play.again') }}
             </button>
             <div class="practice__options-grid">
-              <button
-                *ngFor="let opt of intervalOptions(); trackBy: trackByIndex"
-                class="practice__option-btn"
-                [class.practice__option-btn--selected]="selectedAnswer() === opt"
-                (click)="selectAnswer(opt)"
-                (keydown.enter)="selectAnswer(opt)"
-                (keydown.space)="selectAnswer(opt)"
-                [attr.aria-label]="intervalLabel(opt)"
-                [attr.aria-pressed]="selectedAnswer() === opt"
-              >{{ intervalLabel(opt) }}</button>
+              @for (opt of intervalOptions(); track $index) {
+                <button
+                  class="practice__option-btn"
+                  [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                  (click)="selectAnswer(opt)"
+                  (keydown.enter)="selectAnswer(opt)"
+                  (keydown.space)="selectAnswer(opt)"
+                  [attr.aria-label]="intervalLabel(opt)"
+                  [attr.aria-pressed]="selectedAnswer() === opt"
+                >{{ intervalLabel(opt) }}</button>
+              }
             </div>
             <app-primary-button
               [disabled]="selectedAnswer() === null"
@@ -129,10 +137,10 @@
               [ariaLabel]="i18n.t('practice.submit')"
             >{{ i18n.t('practice.submit') }}</app-primary-button>
           </app-glass-panel>
-        </ng-container>
+        }
 
         <!-- Chord exercise -->
-        <ng-container *ngIf="currentExercise()?.type === 'chord'">
+        @if (currentExercise()?.type === 'chord') {
           <app-glass-panel class="practice__exercise-card">
             <h2 class="practice__q-label">{{ i18n.t('exercise.chord.question') }}</h2>
             <button
@@ -144,16 +152,17 @@
               {{ i18n.t('practice.play.again') }}
             </button>
             <div class="practice__options-grid practice__options-grid--2col">
-              <button
-                *ngFor="let opt of chordOptions(); trackBy: trackByIndex"
-                class="practice__option-btn"
-                [class.practice__option-btn--selected]="selectedAnswer() === opt"
-                (click)="selectAnswer(opt)"
-                (keydown.enter)="selectAnswer(opt)"
-                (keydown.space)="selectAnswer(opt)"
-                [attr.aria-label]="chordLabel(opt)"
-                [attr.aria-pressed]="selectedAnswer() === opt"
-              >{{ chordLabel(opt) }}</button>
+              @for (opt of chordOptions(); track $index) {
+                <button
+                  class="practice__option-btn"
+                  [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                  (click)="selectAnswer(opt)"
+                  (keydown.enter)="selectAnswer(opt)"
+                  (keydown.space)="selectAnswer(opt)"
+                  [attr.aria-label]="chordLabel(opt)"
+                  [attr.aria-pressed]="selectedAnswer() === opt"
+                >{{ chordLabel(opt) }}</button>
+              }
             </div>
             <app-primary-button
               [disabled]="selectedAnswer() === null"
@@ -162,18 +171,21 @@
               [ariaLabel]="i18n.t('practice.submit')"
             >{{ i18n.t('practice.submit') }}</app-primary-button>
           </app-glass-panel>
-        </ng-container>
+        }
 
         <!-- Note-id exercise -->
-        <ng-container *ngIf="currentExercise()?.type === 'note-id'">
+        @if (currentExercise()?.type === 'note-id') {
           <app-glass-panel class="practice__exercise-card practice__exercise-card--note">
             <h2 class="practice__q-label">{{ i18n.t('exercise.note.question') }}</h2>
-            <p class="practice__note-hint-text" *ngIf="noteHintKey()">
-              {{ i18n.t('exercise.note.hint') }}
-            </p>
-            <p class="practice__note-hint-text practice__note-hint-text--find" *ngIf="!noteHintKey()">
-              {{ i18n.t('exercise.note.find') }}
-            </p>
+            @if (noteHintKey()) {
+              <p class="practice__note-hint-text">
+                {{ i18n.t('exercise.note.hint') }}
+              </p>
+            } @else {
+              <p class="practice__note-hint-text practice__note-hint-text--find">
+                {{ i18n.t('exercise.note.find') }}
+              </p>
+            }
             <button
               class="practice__play-btn"
               (click)="playCurrentExercise()"
@@ -184,26 +196,27 @@
             </button>
             <app-piano-keyboard
               [highlightedNote]="noteHintKey()"
-              [selectedNote]="$any(selectedAnswer())"
+              [selectedNote]="selectedAnswer()?.toString() ?? null"
               [disabled]="!!noteHintKey()"
               (noteTapped)="selectNoteAndSubmit($event)"
             />
           </app-glass-panel>
-        </ng-container>
+        }
 
         <!-- Melody exercise -->
-        <ng-container *ngIf="currentExercise()?.type === 'melody'">
+        @if (currentExercise()?.type === 'melody') {
           <app-glass-panel class="practice__exercise-card practice__exercise-card--melody">
 
             <!-- FASE LISTEN: ouvir a melodia -->
-            <ng-container *ngIf="melodyPhase() === 'listen'">
+            @if (melodyPhase() === 'listen') {
               <h2 class="practice__q-label">{{ i18n.t('exercise.melody.listen') }}</h2>
               <div class="practice__melody-notes">
-                <span
-                  *ngFor="let n of $any(currentExercise())?.notes; trackBy: trackByIndex"
-                  class="practice__melody-dot"
-                  [class.practice__melody-dot--active]="melodyHighlightNote() === n.note"
-                >●</span>
+                @for (n of melodyNotes(); track $index) {
+                  <span
+                    class="practice__melody-dot"
+                    [class.practice__melody-dot--active]="melodyHighlightNote() === n.note"
+                  >●</span>
+                }
               </div>
               <app-piano-keyboard
                 [highlightedNote]="melodyHighlightNote()"
@@ -227,18 +240,19 @@
                   {{ i18n.t('exercise.melody.start') }}
                 </app-primary-button>
               </div>
-            </ng-container>
+            }
 
             <!-- FASE PLAY: tocar a melodia -->
-            <ng-container *ngIf="melodyPhase() === 'play'">
+            @if (melodyPhase() === 'play') {
               <h2 class="practice__q-label">{{ i18n.t('exercise.melody.play') }}</h2>
               <div class="practice__melody-progress">
-                <span
-                  *ngFor="let n of $any(currentExercise())?.notes; let i = index; trackBy: trackByIndex"
-                  class="practice__melody-step"
-                  [class.practice__melody-step--done]="i < melodyStep()"
-                  [class.practice__melody-step--current]="i === melodyStep()"
-                >{{ n.note.replace(/\d/, '') }}</span>
+                @for (n of melodyNotes(); track $index; let i = $index) {
+                  <span
+                    class="practice__melody-step"
+                    [class.practice__melody-step--done]="i < melodyStep()"
+                    [class.practice__melody-step--current]="i === melodyStep()"
+                  >{{ n.note.replace(/\d/, '') }}</span>
+                }
               </div>
               <app-piano-keyboard
                 [highlightedNote]="melodyExpectedNote()"
@@ -253,14 +267,16 @@
                 <mat-icon aria-hidden="true">replay</mat-icon>
                 {{ i18n.t('exercise.melody.replay') }}
               </button>
-            </ng-container>
+            }
 
           </app-glass-panel>
-        </ng-container>
+        }
       </div>
+      }
 
       <!-- PHASE: feedback -->
-      <div *ngIf="phase() === 'feedback'" class="practice__phase" [@fadeSlide]>
+      @if (phase() === 'feedback') {
+        <div class="practice__phase" [@fadeSlide]>
         <app-glass-panel class="practice__feedback-card" [class.correct]="lastCorrect()">
           <div class="practice__feedback-icon" [@feedback]>
             {{ lastCorrect() ? '🎉' : '😕' }}
@@ -268,19 +284,24 @@
           <h2 class="practice__feedback-title">
             {{ lastCorrect() ? i18n.t('practice.correct') : i18n.t('practice.wrong') }}
           </h2>
-          <p *ngIf="explanationText()" class="practice__feedback-explanation">
-            {{ explanationText() }}
-          </p>
-          <div class="practice__feedback-xp" *ngIf="lastCorrect()">
-            {{ i18n.t('practice.xp.earned', { xp: lastXpEarned() }) }}
-          </div>
+          @if (explanationText()) {
+            <p class="practice__feedback-explanation">
+              {{ explanationText() }}
+            </p>
+          }
+          @if (lastCorrect()) {
+            <div class="practice__feedback-xp">
+              {{ i18n.t('practice.xp.earned', { xp: lastXpEarned() }) }}
+            </div>
+          }
           <div class="practice__feedback-actions">
-            <app-primary-button
-              *ngIf="!lastCorrect()"
-              variant="secondary"
-              (clicked)="retry()"
-              [ariaLabel]="i18n.t('practice.retry')"
-            >{{ i18n.t('practice.retry') }}</app-primary-button>
+            @if (!lastCorrect()) {
+              <app-primary-button
+                variant="secondary"
+                (clicked)="retry()"
+                [ariaLabel]="i18n.t('practice.retry')"
+              >{{ i18n.t('practice.retry') }}</app-primary-button>
+            }
             <app-primary-button
               (clicked)="nextExercise()"
               [ariaLabel]="isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next')"
@@ -290,9 +311,11 @@
           </div>
         </app-glass-panel>
       </div>
+      }
 
       <!-- PHASE: result -->
-      <div *ngIf="phase() === 'result'" class="practice__phase" [@fadeSlide]>
+      @if (phase() === 'result') {
+        <div class="practice__phase" [@fadeSlide]>
         <app-glass-panel class="practice__result-card">
           <span class="practice__result-trophy">🏆</span>
           <h2 class="practice__result-title">{{ i18n.t('practice.result.title') }}</h2>
@@ -314,6 +337,7 @@
           >{{ i18n.t('practice.result.back') }}</app-primary-button>
         </app-glass-panel>
       </div>
+      }
 
       <div class="safe-bottom"></div>
     </div>

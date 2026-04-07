@@ -20,11 +20,12 @@
       </div>
 
       <div class="achievements__grid">
-        <app-badge-chip
-          *ngFor="let a of allAchievements; trackBy: trackById"
-          [achievement]="a"
-          [locked]="!isEarned(a.id)"
-        />
+        @for (a of allAchievements; track a.id) {
+          <app-badge-chip
+            [achievement]="a"
+            [locked]="!isEarned(a.id)"
+          />
+        }
       </div>
 
       <div class="safe-bottom"></div>

@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -11,9 +10,8 @@ import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-p
 
 @Component({
   selector: 'app-profile',
-  standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    FormsModule,
     MatSliderModule, MatSlideToggleModule, MatIconModule,
     GlassPanelComponent,
   ],

@@ -1,7 +1,6 @@
 import {
   Component, ChangeDetectionStrategy, OnInit, signal, inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,8 +18,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, MatIconModule, MatRippleModule],
+  imports: [RouterOutlet, MatIconModule, MatRippleModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     trigger('routeAnimation', [
@@ -43,22 +41,25 @@ interface NavItem {
         <router-outlet />
       </main>
 
-      <nav class="app-shell__bottom-nav" *ngIf="showNav()"
-           role="navigation" aria-label="Navegação">
-        <button
-          *ngFor="let item of navItems; trackBy: trackByRoute"
-          class="app-shell__nav-btn"
-          [class.app-shell__nav-btn--active]="isActive(item.route)"
-          [attr.aria-label]="item.label"
-          [attr.aria-current]="isActive(item.route) ? 'page' : null"
-          matRipple
-          [matRippleCentered]="true"
-          (click)="navigate(item.route)"
-        >
-          <mat-icon class="app-shell__nav-icon" aria-hidden="true">{{ item.icon }}</mat-icon>
-          <span class="app-shell__nav-label">{{ item.label }}</span>
-        </button>
-      </nav>
+      @if (showNav()) {
+        <nav class="app-shell__bottom-nav"
+             role="navigation" aria-label="Navegação">
+          @for (item of navItems; track item.route) {
+            <button
+              class="app-shell__nav-btn"
+              [class.app-shell__nav-btn--active]="isActive(item.route)"
+              [attr.aria-label]="item.label"
+              [attr.aria-current]="isActive(item.route) ? 'page' : null"
+              matRipple
+              [matRippleCentered]="true"
+              (click)="navigate(item.route)"
+            >
+              <mat-icon class="app-shell__nav-icon" aria-hidden="true">{{ item.icon }}</mat-icon>
+              <span class="app-shell__nav-label">{{ item.label }}</span>
+            </button>
+          }
+        </nav>
+      }
     </div>
   `,
   styleUrl: './app.scss',
@@ -96,6 +97,4 @@ export class App implements OnInit {
   navigate(route: string): void {
     this.router.navigate([route]);
   }
-
-  trackByRoute(_: number, item: NavItem): string { return item.route; }
 }

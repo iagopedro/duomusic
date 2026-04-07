@@ -1,7 +1,6 @@
 import {
   Component, ChangeDetectionStrategy, signal, computed, inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { trigger, transition, style, animate, query, group } from '@angular/animations';
@@ -19,8 +18,7 @@ interface OnboardingStep {
 
 @Component({
   selector: 'app-onboarding',
-  standalone: true,
-  imports: [CommonModule, MatIconModule, PrimaryButtonComponent, GlassPanelComponent],
+  imports: [MatIconModule, PrimaryButtonComponent, GlassPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     trigger('slideIn', [
@@ -54,6 +52,10 @@ interface OnboardingStep {
   styleUrl: './onboarding.component.scss',
 })
 export class OnboardingComponent {
+  readonly i18n = inject(I18nService);
+  private readonly storage = inject(StorageService);
+  private readonly router = inject(Router);
+
   readonly steps: OnboardingStep[] = [
     {
       titleKey: 'onboarding.step1.title',
@@ -80,12 +82,6 @@ export class OnboardingComponent {
   readonly isLast = computed(() => this.currentIndex() === this.steps.length - 1);
   readonly stepTitle = computed(() => this.i18n.tStr(this.currentStep().titleKey));
   readonly stepDesc = computed(() => this.i18n.tStr(this.currentStep().descKey));
-
-  constructor(
-    readonly i18n: I18nService,
-    private readonly storage: StorageService,
-    private readonly router: Router,
-  ) {}
 
   next(): void {
     if (!this.isLast()) this.currentIndex.update(i => i + 1);

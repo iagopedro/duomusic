@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -15,9 +14,7 @@ import { Module } from '../../core/models';
 
 @Component({
   selector: 'app-home',
-  standalone: true,
   imports: [
-    CommonModule,
     MatIconModule,
     GlassPanelComponent,
     XpBarComponent,
@@ -63,7 +60,4 @@ export class HomeComponent {
       this.router.navigate(['/practice', mod.id]);
     }
   }
-
-  trackById(_: number, item: { id: string }): string { return item.id; }
-  trackByModuleId(_: number, mod: Module): string { return mod.id; }
 }

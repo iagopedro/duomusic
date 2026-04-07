@@ -1,7 +1,6 @@
 import {
-  Component, ChangeDetectionStrategy, Input, Output, EventEmitter, signal, inject,
+  Component, ChangeDetectionStrategy, input, output, signal, inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { AudioService } from '../../../core/services/audio.service';
 
 export interface PianoKey {
@@ -28,18 +27,16 @@ export const WHITE_KEYS: PianoKey[] = [
 
 @Component({
   selector: 'app-piano-keyboard',
-  standalone: true,
-  imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './piano-keyboard.component.html',
   styleUrl: './piano-keyboard.component.scss',
 })
 export class PianoKeyboardComponent {
-  @Input() highlightedNote: string | null = null;
-  @Input() selectedNote: string | null = null;
-  @Input() wrongNote: string | null = null;
-  @Input() disabled = false;
-  @Output() noteTapped = new EventEmitter<string>();
+  readonly highlightedNote = input<string | null>(null);
+  readonly selectedNote = input<string | null>(null);
+  readonly wrongNote = input<string | null>(null);
+  readonly disabled = input(false);
+  readonly noteTapped = output<string>();
 
   readonly pressedNote = signal<string | null>(null);
   readonly keys = WHITE_KEYS;
@@ -47,7 +44,7 @@ export class PianoKeyboardComponent {
   private readonly audio = inject(AudioService);
 
   tapKey(key: PianoKey): void {
-    if (this.disabled) return;
+    if (this.disabled()) return;
     this.audio.resume().then(() => {
       this.audio.playTone(key.freq, 600);
     });
@@ -55,6 +52,4 @@ export class PianoKeyboardComponent {
     setTimeout(() => this.pressedNote.set(null), 200);
     this.noteTapped.emit(key.note);
   }
-
-  trackByNote(_: number, key: PianoKey): string { return key.note; }
 }
