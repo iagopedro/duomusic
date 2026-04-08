@@ -3,8 +3,7 @@ import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProgressService } from '../../core/services/progress.service';
-import { MODULES } from '../../data/modules.data';
-import { ACHIEVEMENTS } from '../../data/achievements.data';
+import { ApiService } from '../../core/services/api.service';
 import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-panel.component';
 import { XpBarComponent } from '../../shared/components/xp-bar/xp-bar.component';
 import { PrimaryButtonComponent } from '../../shared/components/primary-button/primary-button.component';
@@ -27,11 +26,12 @@ import { Module } from '../../core/models';
   styleUrl: './home.component.scss',
 })
 export class HomeComponent {
-  readonly modules = MODULES;
-
+  private readonly api = inject(ApiService);
   private readonly progress = inject(ProgressService);
   private readonly router = inject(Router);
   readonly i18n = inject(I18nService);
+
+  readonly modules = this.api.modules;
 
   readonly level = this.progress.level;
   readonly streak = this.progress.streak;
@@ -50,7 +50,8 @@ export class HomeComponent {
   }
 
   continuePractice(): void {
-    const next = MODULES.find(m => !this.progress.isModuleCompleted(m.id) && this.progress.isModuleUnlocked(m.id));
+    const mods = this.api.modules();
+    const next = mods.find(m => !this.progress.isModuleCompleted(m.id) && this.progress.isModuleUnlocked(m.id));
     const id = next?.id ?? 'fundamentals';
     this.router.navigate(['/practice', id]);
   }

@@ -20,7 +20,7 @@
       </div>
 
       <div class="achievements__grid">
-        @for (a of allAchievements; track a.id) {
+        @for (a of allAchievements(); track a.id) {
           <app-badge-chip
             [achievement]="a"
             [locked]="!isEarned(a.id)"

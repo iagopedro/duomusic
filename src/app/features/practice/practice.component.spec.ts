@@ -1,11 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { signal } from '@angular/core';
 
 import { PracticeComponent } from './practice.component';
 import { AudioService } from '../../core/services/audio.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { BackgroundTrackService } from '../../core/services/background-track.service';
+import { ApiService } from '../../core/services/api.service';
+import { MODULES } from '../../data/modules.data';
+import { EXERCISES } from '../../data/exercises.data';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -34,6 +38,21 @@ function makeProgressSpy() {
   return { recordResult: vi.fn() };
 }
 
+function makeApiSpy() {
+  const modulesSignal = signal(MODULES);
+  const exercisesSignal = signal(EXERCISES);
+  return {
+    modules: modulesSignal,
+    exercises: exercisesSignal,
+    achievements: signal([]),
+    getExercisesForModule: vi.fn().mockImplementation((moduleId: string) => {
+      const mod = MODULES.find(m => m.id === moduleId);
+      if (!mod) return [];
+      return EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
+    }),
+  };
+}
+
 function makeRoute(moduleId: string) {
   return {
     snapshot: { paramMap: { get: vi.fn().mockReturnValue(moduleId) } },
@@ -44,6 +63,7 @@ async function createFixture(moduleId: string) {
   const audioSpy = makeAudioSpy();
   const progressSpy = makeProgressSpy();
   const bgTrackSpy = makeBgTrackSpy();
+  const apiSpy = makeApiSpy();
   const routerSpy = { navigate: vi.fn() };
 
   await TestBed.configureTestingModule({
@@ -53,6 +73,7 @@ async function createFixture(moduleId: string) {
       { provide: AudioService, useValue: audioSpy },
       { provide: ProgressService, useValue: progressSpy },
       { provide: BackgroundTrackService, useValue: bgTrackSpy },
+      { provide: ApiService, useValue: apiSpy },
       { provide: ActivatedRoute, useValue: makeRoute(moduleId) },
       { provide: Router, useValue: routerSpy },
     ],
@@ -62,7 +83,7 @@ async function createFixture(moduleId: string) {
   fixture.detectChanges();
   await fixture.whenStable();
 
-  return { fixture, component: fixture.componentInstance, audioSpy, progressSpy, bgTrackSpy, routerSpy };
+  return { fixture, component: fixture.componentInstance, audioSpy, progressSpy, bgTrackSpy, apiSpy, routerSpy };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

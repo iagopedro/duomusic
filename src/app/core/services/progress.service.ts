@@ -7,9 +7,7 @@ import {
   Achievement,
   DailyMission,
 } from '../models';
-import { ACHIEVEMENTS } from '../../data/achievements.data';
-import { EXERCISES } from '../../data/exercises.data';
-import { MODULES } from '../../data/modules.data';
+import { ApiService } from './api.service';
 
 const STORAGE_KEY = 'duomusic_progress';
 
@@ -32,6 +30,7 @@ const DEFAULT_PROGRESS: UserProgress = {
 @Injectable({ providedIn: 'root' })
 export class ProgressService {
   private readonly storage = inject(StorageService);
+  private readonly api = inject(ApiService);
 
   private readonly _progress = signal<UserProgress>(
     this.storage.get(STORAGE_KEY, DEFAULT_PROGRESS)
@@ -96,7 +95,7 @@ export class ProgressService {
 
   getRecentBadges(count = 3): Achievement[] {
     const ids = this._progress().earnedAchievementIds.slice(-count);
-    return ACHIEVEMENTS.filter(a => ids.includes(a.id));
+    return this.api.achievements().filter(a => ids.includes(a.id));
   }
 
   getDailyMissions(): DailyMission[] {
@@ -134,7 +133,8 @@ export class ProgressService {
   }
 
   private checkModuleCompletion(moduleId: ModuleId): void {
-    const module = MODULES.find(m => m.id === moduleId);
+    const modules = this.api.modules();
+    const module = modules.find(m => m.id === moduleId);
     if (!module) return;
     const p = this._progress();
     if (p.completedModuleIds.includes(moduleId)) return;
@@ -148,7 +148,7 @@ export class ProgressService {
     // Marca módulo como concluído e desbloqueia o próximo
     this._progress.update(prev => {
       const completedModuleIds = [...prev.completedModuleIds, moduleId];
-      const nextModule = MODULES.find(m => m.requiredModuleId === moduleId);
+      const nextModule = modules.find(m => m.requiredModuleId === moduleId);
       const unlockedModuleIds = nextModule
         ? [...prev.unlockedModuleIds, nextModule.id]
         : prev.unlockedModuleIds;
@@ -161,7 +161,7 @@ export class ProgressService {
     const earned = new Set(p.earnedAchievementIds);
     const newEarned: string[] = [];
 
-    for (const ach of ACHIEVEMENTS) {
+    for (const ach of this.api.achievements()) {
       if (earned.has(ach.id)) continue;
       if (this.conditionMet(ach, p)) newEarned.push(ach.id);
     }

@@ -9,8 +9,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { AudioService } from '../../core/services/audio.service';
 import { BackgroundTrackService } from '../../core/services/background-track.service';
 import { ProgressService } from '../../core/services/progress.service';
-import { EXERCISES } from '../../data/exercises.data';
-import { MODULES } from '../../data/modules.data';
+import { ApiService } from '../../core/services/api.service';
 import {
   Exercise, IntervalExercise, ChordExercise, RhythmExercise, NoteExercise, MelodyExercise,
   ExerciseResult, ModuleId, ChordType,
@@ -105,7 +104,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private rhythmExpectedTimes: number[] = [];
 
   readonly moduleName = computed(() => {
-    const mod = MODULES.find(m => m.id === this.moduleId);
+    const mod = this.api.modules().find(m => m.id === this.moduleId);
     return mod ? this.i18n.tStr(mod.nameKey) : '';
   });
 
@@ -213,6 +212,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private moduleId!: ModuleId;
 
   readonly i18n = inject(I18nService);
+  private readonly api = inject(ApiService);
   private readonly audio = inject(AudioService);
   private readonly bgTrack = inject(BackgroundTrackService);
   private readonly progress = inject(ProgressService);
@@ -221,12 +221,11 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') as ModuleId;
-    const mod = MODULES.find(m => m.id === this.moduleId);
-    if (!mod) {
+    const exerciseList = this.api.getExercisesForModule(this.moduleId);
+    if (!exerciseList.length) {
       this.router.navigate(['/home']);
       return;
     }
-    const exerciseList = EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
     this.exercises.set(exerciseList);
   }
 

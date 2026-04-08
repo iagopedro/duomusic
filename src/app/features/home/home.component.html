@@ -81,7 +81,7 @@
       <section class="home__section">
         <h2 class="home__section-title">{{ i18n.t('home.modules.title') }}</h2>
         <div class="home__modules-list">
-          @for (mod of modules; track mod.id) {
+          @for (mod of modules(); track mod.id) {
             <app-module-card
               [module]="mod"
               [locked]="!isUnlocked(mod)"

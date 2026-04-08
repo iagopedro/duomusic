@@ -1,8 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { ProgressService } from './progress.service';
 import { StorageService } from '../storage/storage.service';
+import { ApiService } from './api.service';
 import { ExerciseResult } from '../models';
 import { MODULES } from '../../data/modules.data';
+import { ACHIEVEMENTS } from '../../data/achievements.data';
 
 const DEFAULT_PROGRESS = {
   xp: 0, level: 1, streak: 0, lastPracticeDate: null,
@@ -20,6 +23,15 @@ function makeResult(overrides: Partial<ExerciseResult> = {}): ExerciseResult {
   };
 }
 
+function makeApiSpy() {
+  return {
+    modules: signal(MODULES),
+    exercises: signal([]),
+    achievements: signal(ACHIEVEMENTS),
+    getExercisesForModule: vi.fn().mockReturnValue([]),
+  };
+}
+
 describe('ProgressService', () => {
   let service: ProgressService;
   let storageSpy: ReturnType<typeof vi.fn>;
@@ -33,6 +45,7 @@ describe('ProgressService', () => {
       providers: [
         ProgressService,
         { provide: StorageService, useValue: storageStub },
+        { provide: ApiService, useValue: makeApiSpy() },
       ],
     });
     service = TestBed.inject(ProgressService);
