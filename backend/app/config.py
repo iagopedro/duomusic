@@ -1,6 +1,10 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings
+
+# Caminho absoluto para o .env — independente de onde o uvicorn é iniciado
+_ENV_FILE = Path(__file__).parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -21,7 +25,7 @@ class Settings(BaseSettings):
     rate_limit_max: int = 60
     rate_limit_window: int = 60
 
-    model_config = {"env_prefix": "DUOMUSIC_", "env_file": ".env"}
+    model_config = {"env_prefix": "DUOMUSIC_", "env_file": str(_ENV_FILE)}
 
 
 @lru_cache

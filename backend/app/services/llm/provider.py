@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from pydantic import TypeAdapter
 
@@ -66,11 +67,34 @@ class LLMExerciseGenerator(ExerciseGenerator):
     async def generate(self, module_id: str, count: int = 5) -> list:
         prompt = build_exercise_prompt(module_id, count)
 
+        logger.info(
+            "Chamando LLM (provider=%s, model=%s) para módulo '%s' count=%d.",
+            self._settings.llm_provider,
+            self._settings.llm_model,
+            module_id,
+            count,
+        )
         try:
             response = await self._llm.ainvoke(prompt)
-            raw = json.loads(response.content)
-            exercises = self._adapter.validate_python(raw)
+            raw = response.content
+            # Remove code fences que o Gemini costuma incluir (```json ... ```)
+            clean = re.sub(r"^```(?:json)?\s*", "", raw.strip(), flags=re.MULTILINE)
+            clean = re.sub(r"```\s*$", "", clean.strip(), flags=re.MULTILINE).strip()
+            exercises = self._adapter.validate_python(json.loads(clean))
+            logger.info(
+                "LLM retornou %d exercício(s) para módulo '%s'.",
+                len(exercises),
+                module_id,
+            )
             return exercises
+        except json.JSONDecodeError as exc:
+            logger.warning(
+                "LLM retornou JSON inválido para módulo '%s': %s. Conteúdo bruto: %r",
+                module_id,
+                exc,
+                response.content[:200],
+            )
+            return await self._fallback.get_by_module(module_id)
         except Exception:
             logger.warning(
                 "Falha na geração via LLM para módulo '%s', usando fallback estático.",

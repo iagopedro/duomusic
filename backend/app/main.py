@@ -1,3 +1,5 @@
+import logging
+import logging.config
 import time
 from collections import defaultdict
 
@@ -9,6 +11,23 @@ from .config import get_settings
 from .routers import achievements, exercises, modules
 
 settings = get_settings()
+
+logging.basicConfig(
+    level=logging.DEBUG if settings.debug else logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+
+logging.config.dictConfig({
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"}
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "default"}
+    },
+    "root": {"level": "INFO", "handlers": ["console"]},
+})
 
 app = FastAPI(
     title="DuoMusic API",

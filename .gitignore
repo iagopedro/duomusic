@@ -51,3 +51,10 @@ Thumbs.db
 .avanade-method/
 .github/agents/
 .github/copilot-instructions.md
+
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/.env
