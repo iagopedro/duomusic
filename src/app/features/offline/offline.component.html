@@ -1,0 +1,42 @@
+<div class="offline">
+  <div class="offline__illustration-area">
+    <div class="offline__glow"></div>
+    <span class="offline__emoji">🎵</span>
+  </div>
+
+  <app-glass-panel class="offline__card-wrap" padding="2rem">
+    <div class="offline__content">
+      <div class="offline__icon-row">
+        <mat-icon class="offline__icon" aria-hidden="true">wifi_off</mat-icon>
+      </div>
+
+      <h1 class="offline__title">Servidor indisponível</h1>
+      <p class="offline__desc">
+        Não foi possível conectar ao servidor da DuoMusic. Verifique sua conexão
+        ou tente novamente em alguns instantes.
+      </p>
+
+      <div class="offline__details">
+        <mat-icon class="offline__details-icon" aria-hidden="true">info</mat-icon>
+        <span>O servidor pode estar temporariamente fora do ar.</span>
+      </div>
+
+      <div class="offline__actions">
+        <app-primary-button
+          size="lg"
+          [disabled]="isRetrying"
+          (clicked)="retry()"
+          ariaLabel="Tentar novamente"
+        >
+          @if (isRetrying) {
+            <mat-icon class="offline__spinner" aria-hidden="true">refresh</mat-icon>
+            Reconectando...
+          } @else {
+            <mat-icon aria-hidden="true">refresh</mat-icon>
+            Tentar novamente
+          }
+        </app-primary-button>
+      </div>
+    </div>
+  </app-glass-panel>
+</div>

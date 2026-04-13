@@ -11,21 +11,27 @@ export class ApiService {
   private readonly _modules = signal<Module[]>([]);
   private readonly _exercises = signal<Exercise[]>([]);
   private readonly _achievements = signal<Achievement[]>([]);
+  private readonly _backendOffline = signal(false);
 
   readonly modules = this._modules.asReadonly();
   readonly exercises = this._exercises.asReadonly();
   readonly achievements = this._achievements.asReadonly();
+  readonly backendOffline = this._backendOffline.asReadonly();
 
   /** Carrega todos os dados do backend. Chamado no APP_INITIALIZER. */
   async initialize(): Promise<void> {
-    const [modules, exercises, achievements] = await Promise.all([
-      firstValueFrom(this.http.get<Module[]>(`${environment.apiUrl}/modules`)),
-      firstValueFrom(this.http.get<Exercise[]>(`${environment.apiUrl}/exercises`)),
-      firstValueFrom(this.http.get<Achievement[]>(`${environment.apiUrl}/achievements`)),
-    ]);
-    this._modules.set(modules);
-    this._exercises.set(exercises);
-    this._achievements.set(achievements);
+    try {
+      const [modules, exercises, achievements] = await Promise.all([
+        firstValueFrom(this.http.get<Module[]>(`${environment.apiUrl}/modules`)),
+        firstValueFrom(this.http.get<Exercise[]>(`${environment.apiUrl}/exercises`)),
+        firstValueFrom(this.http.get<Achievement[]>(`${environment.apiUrl}/achievements`)),
+      ]);
+      this._modules.set(modules);
+      this._exercises.set(exercises);
+      this._achievements.set(achievements);
+    } catch {
+      this._backendOffline.set(true);
+    }
   }
 
   /** Retorna exercícios de um módulo específico, na ordem definida pelo módulo. */

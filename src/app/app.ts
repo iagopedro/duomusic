@@ -8,6 +8,7 @@ import { MatRippleModule } from '@angular/material/core';
 import { trigger, transition, style, animate, query, group } from '@angular/animations';
 import { I18nService } from './core/i18n/i18n.service';
 import { SettingsService } from './core/services/settings.service';
+import { ApiService } from './core/services/api.service';
 import { computed } from '@angular/core';
 
 interface NavItem {
@@ -68,6 +69,7 @@ export class App implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
   private readonly settings = inject(SettingsService);
+  private readonly api = inject(ApiService);
 
   readonly navItems: NavItem[] = [
     { route: '/home',         icon: 'home',           label: this.i18n.t('nav.home') },
@@ -77,11 +79,18 @@ export class App implements OnInit {
   ];
 
   readonly currentRoute = signal('');
-  readonly showNav = computed(() => !this.currentRoute().startsWith('/onboarding'));
+  readonly showNav = computed(() =>
+    !this.currentRoute().startsWith('/onboarding') &&
+    !this.currentRoute().startsWith('/offline')
+  );
   readonly routeState = computed(() => this.currentRoute());
   readonly theme = computed(() => this.settings.settings().darkTheme ? 'dark' : 'light');
 
   ngOnInit(): void {
+    if (this.api.backendOffline()) {
+      this.router.navigate(['/offline']);
+    }
+
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(e => {

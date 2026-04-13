@@ -33,6 +33,11 @@ export const routes: Routes = [
       import('./features/profile/profile.routes').then(m => m.PROFILE_ROUTES),
   },
   {
+    path: 'offline',
+    loadChildren: () =>
+      import('./features/offline/offline.routes').then(m => m.OFFLINE_ROUTES),
+  },
+  {
     path: '',
     redirectTo: 'onboarding',
     pathMatch: 'full',
