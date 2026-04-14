@@ -115,7 +115,7 @@ export class AudioService {
    * @param startAt Instante de início em segundos (AudioContext time). Se omitido,
    *                usa currentTime + scheduleOffset() para compensar latência Bluetooth.
    */
-  playTone(freq: number, durationMs: number, type: OscillatorType = 'sine', startAt?: number): void {
+  playTone(freq: number, durationMs: number, type: OscillatorType = 'sine', startAt?: number, volume = 0.8): void {
     const ctx = this.getCtx();
     const osc = ctx.createOscillator();
     const envGain = ctx.createGain();
@@ -128,8 +128,8 @@ export class AudioService {
 
     // Envelope ADSR simples
     envGain.gain.setValueAtTime(0, now);
-    envGain.gain.linearRampToValueAtTime(0.8, now + 0.01);
-    envGain.gain.setValueAtTime(0.8, now + dur - 0.05);
+    envGain.gain.linearRampToValueAtTime(volume, now + 0.01);
+    envGain.gain.setValueAtTime(volume, now + dur - 0.05);
     envGain.gain.linearRampToValueAtTime(0, now + dur);
 
     osc.connect(envGain);

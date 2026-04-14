@@ -575,7 +575,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
         setTimeout(() => this.audio.playTone(659.25, 150), 160); // E5
         setTimeout(() => this.audio.playTone(783.99, 300), 320); // G5
       } else {
-        this.audio.playTone(220, 400, 'sawtooth');
+        this.audio.playTone(220, 400, 'sawtooth', undefined, 0.15);
       }
     });
   }
