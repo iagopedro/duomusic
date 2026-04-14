@@ -281,13 +281,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.resetExerciseState();
     // Inicia trilha de fundo (mantém pipeline Bluetooth ativo)
     this.audio.resume().then(() => this.bgTrack.start(this.moduleId));
-
-    // Mostra tutorial do piano se exercícios de nota/melodia existirem
-    const hasPiano = this.exercises().some(e => e.type === 'note-id' || e.type === 'melody');
-    if (hasPiano && !this.storage.get<boolean>(TUTORIAL_STORAGE_KEY, false)) {
-      this.showTutorial.set(true);
-    }
-
+    this.checkAndShowTutorial();
     // Reprodução automática do exercício de áudio
     setTimeout(() => this.playCurrentExercise(), 500);
   }
@@ -298,6 +292,14 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   openTutorial(): void {
     this.showTutorial.set(true);
+  }
+
+  private checkAndShowTutorial(): void {
+    const ex = this.currentExercise();
+    const isPiano = ex?.type === 'note-id' || ex?.type === 'melody';
+    if (isPiano && !this.storage.get<boolean>(TUTORIAL_STORAGE_KEY, false)) {
+      this.showTutorial.set(true);
+    }
   }
 
   playCurrentExercise(): void {
@@ -595,6 +597,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.phase.set('exercise');
     this.resetExerciseState();
     this.exerciseStartMs = Date.now();
+    this.checkAndShowTutorial();
     setTimeout(() => this.playCurrentExercise(), 400);
   }
 
