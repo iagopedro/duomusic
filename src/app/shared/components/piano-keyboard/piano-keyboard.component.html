@@ -18,9 +18,28 @@
         (keydown.space)="tapKey(key)"
       >
         <span class="piano__key-label">{{ key.label }}</span>
+        @if (showKeyboardHints()) {
+          <span class="piano__key-hint">{{ key.keyboardKey.toUpperCase() }}</span>
+        }
       </button>
       @if (key.blackAfter) {
-        <div class="piano__black-key" aria-hidden="true"></div>
+        @let bk = getBlackKey(key);
+        @if (bk) {
+          <button
+            class="piano__black-key piano__black-key--interactive"
+            [class.piano__black-key--highlighted]="highlightedNote() === bk.note"
+            [class.piano__black-key--selected]="selectedNote() === bk.note"
+            [class.piano__black-key--wrong]="wrongNote() === bk.note"
+            [class.piano__black-key--pressed]="pressedNote() === bk.note"
+            [disabled]="disabled()"
+            [attr.aria-label]="'Nota ' + bk.note"
+            (click)="tapKey(bk)"
+          >
+            @if (showKeyboardHints()) {
+              <span class="piano__black-key-hint">{{ bk.keyboardKey.toUpperCase() }}</span>
+            }
+          </button>
+        }
       }
     </div>
   }

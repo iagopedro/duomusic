@@ -10,6 +10,7 @@ import { AudioService } from '../../core/services/audio.service';
 import { BackgroundTrackService } from '../../core/services/background-track.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { ApiService } from '../../core/services/api.service';
+import { StorageService } from '../../core/storage/storage.service';
 import {
   Exercise, IntervalExercise, ChordExercise, RhythmExercise, NoteExercise, MelodyExercise,
   ExerciseResult, ModuleId, ChordType,
@@ -18,6 +19,7 @@ import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-p
 import { PrimaryButtonComponent } from '../../shared/components/primary-button/primary-button.component';
 import { XpBarComponent } from '../../shared/components/xp-bar/xp-bar.component';
 import { PianoKeyboardComponent } from '../../shared/components/piano-keyboard/piano-keyboard.component';
+import { PianoTutorialComponent, TUTORIAL_STORAGE_KEY } from '../../shared/components/piano-tutorial/piano-tutorial.component';
 
 type PracticePhase = 'intro' | 'exercise' | 'feedback' | 'result';
 
@@ -34,6 +36,7 @@ const INTERVAL_NAMES: Record<number, string> = {
   imports: [
     MatIconModule,
     GlassPanelComponent, PrimaryButtonComponent, XpBarComponent, PianoKeyboardComponent,
+    PianoTutorialComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
@@ -226,11 +229,15 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   private moduleId!: ModuleId;
 
+  // Tutorial do piano
+  readonly showTutorial = signal(false);
+
   readonly i18n = inject(I18nService);
   private readonly api = inject(ApiService);
   private readonly audio = inject(AudioService);
   private readonly bgTrack = inject(BackgroundTrackService);
   private readonly progress = inject(ProgressService);
+  private readonly storage = inject(StorageService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -274,8 +281,23 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.resetExerciseState();
     // Inicia trilha de fundo (mantém pipeline Bluetooth ativo)
     this.audio.resume().then(() => this.bgTrack.start(this.moduleId));
+
+    // Mostra tutorial do piano se exercícios de nota/melodia existirem
+    const hasPiano = this.exercises().some(e => e.type === 'note-id' || e.type === 'melody');
+    if (hasPiano && !this.storage.get<boolean>(TUTORIAL_STORAGE_KEY, false)) {
+      this.showTutorial.set(true);
+    }
+
     // Reprodução automática do exercício de áudio
     setTimeout(() => this.playCurrentExercise(), 500);
+  }
+
+  closeTutorial(): void {
+    this.showTutorial.set(false);
+  }
+
+  openTutorial(): void {
+    this.showTutorial.set(true);
   }
 
   playCurrentExercise(): void {

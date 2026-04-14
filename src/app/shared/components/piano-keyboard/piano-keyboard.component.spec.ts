@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PianoKeyboardComponent, WHITE_KEYS } from './piano-keyboard.component';
+import { PianoKeyboardComponent, WHITE_KEYS, ALL_KEYS } from './piano-keyboard.component';
 import { AudioService } from '../../../core/services/audio.service';
 
 function makeAudioSpy() {
@@ -75,5 +75,53 @@ describe('PianoKeyboardComponent', () => {
     const keys = fixture.nativeElement.querySelectorAll('.piano-key, [class*="piano"]');
     // At minimum we expect rendered content for keys
     expect(fixture.nativeElement.textContent).toBeTruthy();
+  });
+
+  it('ALL_KEYS should have 13 entries (8 white + 5 black)', () => {
+    expect(ALL_KEYS.length).toBe(13);
+    expect(WHITE_KEYS.length).toBe(8);
+    expect(ALL_KEYS.filter(k => k.isBlack).length).toBe(5);
+  });
+
+  it('each key should have a keyboardKey mapping', () => {
+    for (const k of ALL_KEYS) {
+      expect(k.keyboardKey).toBeTruthy();
+    }
+  });
+
+  it('keyboard keydown should trigger tapKey for mapped key', () => {
+    const spy = vi.fn();
+    component.noteTapped.subscribe(spy);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(spy).toHaveBeenCalledWith('C4');
+  });
+
+  it('keyboard keydown should be ignored when disabled', () => {
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+
+    const spy = vi.fn();
+    component.noteTapped.subscribe(spy);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('keyboard keydown for unmapped key should do nothing', () => {
+    const spy = vi.fn();
+    component.noteTapped.subscribe(spy);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z' }));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('getBlackKey returns the black key after a white key with blackAfter', () => {
+    const cKey = WHITE_KEYS.find(k => k.note === 'C4')!;
+    const bk = component.getBlackKey(cKey);
+    expect(bk).toBeDefined();
+    expect(bk!.note).toBe('C#4');
+  });
+
+  it('getBlackKey returns undefined for white key without blackAfter', () => {
+    const eKey = WHITE_KEYS.find(k => k.note === 'E4')!;
+    expect(component.getBlackKey(eKey)).toBeUndefined();
   });
 });

@@ -154,6 +154,13 @@ export const PT_BR = {
   // Errors / empty states
   'error.module.notfound': 'Módulo não encontrado.',
   'error.exercise.notfound': 'Exercício não encontrado.',
+
+  // Piano tutorial
+  'piano.tutorial.title': 'Mapeamento do Teclado',
+  'piano.tutorial.subtitle': 'Use o teclado do computador para tocar o piano virtual',
+  'piano.tutorial.dont_show': 'Não exibir novamente',
+  'piano.tutorial.confirm': 'Entendi!',
+  'piano.tutorial.help_btn': 'Ver atalhos do teclado',
 } as const;
 
 export type I18nKey = keyof typeof PT_BR;

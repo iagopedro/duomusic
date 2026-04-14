@@ -193,8 +193,16 @@
               [highlightedNote]="noteHintKey()"
               [selectedNote]="selectedAnswer()?.toString() ?? null"
               [disabled]="!!noteHintKey()"
+              [showKeyboardHints]="true"
               (noteTapped)="selectNoteAndSubmit($event)"
             />
+            <button
+              class="practice__play-btn practice__play-btn--subtle"
+              (click)="openTutorial()"
+            >
+              <mat-icon aria-hidden="true">help_outline</mat-icon>
+              {{ i18n.t('piano.tutorial.help_btn') }}
+            </button>
           </app-glass-panel>
         }
 
@@ -216,6 +224,7 @@
               <app-piano-keyboard
                 [highlightedNote]="melodyHighlightNote()"
                 [disabled]="true"
+                [showKeyboardHints]="true"
               />
               <div class="practice__melody-actions">
                 <button
@@ -253,15 +262,25 @@
                 [highlightedNote]="melodyExpectedNote()"
                 [wrongNote]="melodyWrongNote()"
                 [disabled]="false"
+                [showKeyboardHints]="true"
                 (noteTapped)="tapMelodyNote($event)"
               />
-              <button
-                class="practice__play-btn practice__play-btn--subtle"
-                (click)="melodyPhase.set('listen'); playCurrentExercise()"
-              >
+              <div class="practice__melody-play-actions">
+                <button
+                  class="practice__play-btn practice__play-btn--subtle"
+                  (click)="openTutorial()"
+                >
+                  <mat-icon aria-hidden="true">help_outline</mat-icon>
+                  {{ i18n.t('piano.tutorial.help_btn') }}
+                </button>
+                <button
+                  class="practice__play-btn practice__play-btn--subtle"
+                  (click)="melodyPhase.set('listen'); playCurrentExercise()"
+                >
                 <mat-icon aria-hidden="true">replay</mat-icon>
                 {{ i18n.t('exercise.melody.replay') }}
               </button>
+              </div>
             }
 
           </app-glass-panel>
@@ -340,4 +359,10 @@
       }
 
       <div class="safe-bottom"></div>
+
+      <!-- Piano Tutorial Overlay -->
+      <app-piano-tutorial
+        [visible]="showTutorial()"
+        (closed)="closeTutorial()"
+      />
     </div>
