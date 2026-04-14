@@ -25,12 +25,46 @@
     gap: 1rem;
   }
 
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
   &__title {
     font-size: 1.3rem;
     font-weight: 700;
     color: var(--color-on-surface, #fff);
     text-align: center;
     margin: 0;
+    flex: 1;
+  }
+
+  &__close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-on-surface-muted, #aaa);
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 120ms ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--color-on-surface, #fff);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary, #6366f1);
+      outline-offset: 2px;
+    }
   }
 
   &__subtitle {

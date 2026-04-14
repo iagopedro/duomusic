@@ -38,6 +38,7 @@ export const TUTORIAL_STORAGE_KEY = 'duomusic_piano_tutorial_seen';
 })
 export class PianoTutorialComponent {
   readonly visible = input(false);
+  readonly closeButton = input(false);
   readonly closed = output<void>();
 
   readonly allKeys = ALL_KEYS;

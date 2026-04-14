@@ -70,6 +70,26 @@ describe('PianoTutorialComponent', () => {
     expect(checkbox).toBeNull();
   });
 
+  it('should render "Entendi!" button when closeButton is false', () => {
+    fixture.componentRef.setInput('visible', true);
+    fixture.componentRef.setInput('closeButton', false);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('app-primary-button');
+    expect(btn).toBeTruthy();
+    const closeBtn = fixture.nativeElement.querySelector('.piano-tutorial__close-btn');
+    expect(closeBtn).toBeNull();
+  });
+
+  it('should render X close button when closeButton is true', () => {
+    fixture.componentRef.setInput('visible', true);
+    fixture.componentRef.setInput('closeButton', true);
+    fixture.detectChanges();
+    const closeBtn = fixture.nativeElement.querySelector('.piano-tutorial__close-btn');
+    expect(closeBtn).toBeTruthy();
+    const primaryBtn = fixture.nativeElement.querySelector('app-primary-button');
+    expect(primaryBtn).toBeNull();
+  });
+
   it('clicking overlay should call confirm()', () => {
     fixture.componentRef.setInput('visible', true);
     fixture.detectChanges();

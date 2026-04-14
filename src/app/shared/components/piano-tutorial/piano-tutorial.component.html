@@ -1,7 +1,14 @@
 @if (visible()) {
   <div class="piano-tutorial__overlay" [@overlay] (click)="confirm()">
     <div class="piano-tutorial__modal" [@modal] (click)="$event.stopPropagation()">
-      <h2 class="piano-tutorial__title">{{ i18n.t('piano.tutorial.title') }}</h2>
+      <div class="piano-tutorial__header">
+        <h2 class="piano-tutorial__title">{{ i18n.t('piano.tutorial.title') }}</h2>
+        @if (closeButton()) {
+          <button class="piano-tutorial__close-btn" (click)="confirm()" [attr.aria-label]="'Fechar'">
+            <span aria-hidden="true">✕</span>
+          </button>
+        }
+      </div>
       <p class="piano-tutorial__subtitle">{{ i18n.t('piano.tutorial.subtitle') }}</p>
 
       <app-piano-keyboard [showKeyboardHints]="true" [disabled]="true" />
@@ -16,11 +23,13 @@
         }
       </div>
 
-      <app-primary-button
-        style="width: 100%"
-        (clicked)="confirm()"
-        [ariaLabel]="i18n.t('piano.tutorial.confirm')"
-      >{{ i18n.t('piano.tutorial.confirm') }}</app-primary-button>
+      @if (!closeButton()) {
+        <app-primary-button
+          style="width: 100%"
+          (clicked)="confirm()"
+          [ariaLabel]="i18n.t('piano.tutorial.confirm')"
+        >{{ i18n.t('piano.tutorial.confirm') }}</app-primary-button>
+      }
     </div>
   </div>
 }
