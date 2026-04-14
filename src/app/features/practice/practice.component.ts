@@ -96,11 +96,14 @@ export class PracticeComponent implements OnInit, OnDestroy {
   readonly tappedBeats = signal<boolean[]>([]);
   readonly activeBeat = signal(-1);
   readonly countdown = signal(-1); // -1 = hidden, 3/2/1 = counting, 0 = GO!
+  readonly rhythmBeatStatus = signal<('pending' | 'hit' | 'miss')[]>([]);
+  readonly rhythmExtraTaps = signal(0);
+  readonly rhythmTapFeedback = signal<'correct' | 'wrong' | null>(null);
+  readonly rhythmActive = signal(false);
 
   private rhythmTimers: ReturnType<typeof setTimeout>[] = [];
   private exerciseStartMs = 0;
   private rhythmBeatIndex = 0;
-  private rhythmTapTimes: number[] = [];
   private rhythmExpectedTimes: number[] = [];
 
   readonly moduleName = computed(() => {
@@ -177,8 +180,15 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   readonly explanationText = computed(() => {
     const ex = this.currentExercise();
-    if (!ex?.explanationKey) return null;
+    if (!ex) return null;
     const correct = this.lastCorrect();
+    // Ritmo não precisa de explanationKey — sempre mostra feedback
+    if (ex.type === 'rhythm') {
+      return correct
+        ? 'Ritmo perfeito! Seu timing está excelente.'
+        : 'O ritmo não ficou preciso. Ouça com atenção e toque junto com as batidas.';
+    }
+    if (!ex.explanationKey) return null;
     const ex2 = ex as IntervalExercise;
     if (ex.type === 'interval') {
       const name = this.i18n.tStr(INTERVAL_NAMES[ex2.semitones]);
@@ -223,11 +233,12 @@ export class PracticeComponent implements OnInit, OnDestroy {
     if (
       event.code === 'Space' &&
       this.phase() === 'exercise' &&
-      this.currentExercise()?.type === 'rhythm' &&
-      this.countdown() < 0
+      this.currentExercise()?.type === 'rhythm'
     ) {
       event.preventDefault();
-      this.handleTap();
+      if (this.rhythmActive()) {
+        this.handleTap();
+      }
     }
   };
 
@@ -375,8 +386,10 @@ export class PracticeComponent implements OnInit, OnDestroy {
     const msBeat = (60 / ex.bpm) * 1000;
     const sBeat = msBeat / 1000;
     this.rhythmBeatIndex = 0;
-    this.rhythmTapTimes = [];
     this.tappedBeats.set(new Array(ex.pattern.length).fill(false));
+    this.rhythmBeatStatus.set(new Array(ex.pattern.length).fill('pending'));
+    this.rhythmExtraTaps.set(0);
+    this.rhythmTapFeedback.set(null);
 
     this.audio.resume().then(() => {
       // Duck trilha de fundo durante countdown + padrão rítmico
@@ -442,6 +455,15 @@ export class PracticeComponent implements OnInit, OnDestroy {
       });
       t(rhythmVisualStart + cumMs, () => this.activeBeat.set(-1));
 
+      // Ativa recepção de toques após o countdown
+      t(4 * msBeat, () => this.rhythmActive.set(true));
+
+      // Auto-avalia após o padrão terminar + janela de tolerância
+      t(rhythmVisualStart + cumMs + ex.toleranceMs, () => {
+        this.rhythmActive.set(false);
+        this.evaluateRhythm();
+      });
+
       // Expected tap times: alinhados com visual + áudio (ambos usam o mesmo offset)
       const rhythmStartMs = Date.now() + offsetMs + 4 * msBeat;
       let msCum = 0;
@@ -456,56 +478,72 @@ export class PracticeComponent implements OnInit, OnDestroy {
   handleTap(): void {
     this.tapping.set(true);
     const now = Date.now();
-    this.rhythmTapTimes.push(now);
+    const ex = this.currentExercise() as RhythmExercise;
+    if (!ex) return;
 
-    // Marca o beat mais próximo (não-rest) como tocado para feedback visual e habilitar envio
-    if (this.rhythmExpectedTimes.length > 0) {
-      const ex = this.currentExercise() as RhythmExercise;
-      if (ex) {
-        let closestIdx = -1;
-        let closestDist = Infinity;
-        for (let i = 0; i < this.rhythmExpectedTimes.length; i++) {
-          if (ex.pattern[i] === 'rest') continue;
-          const dist = Math.abs(now - this.rhythmExpectedTimes[i]);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestIdx = i;
-          }
-        }
-        if (closestIdx >= 0) {
-          const updated = [...this.tappedBeats()];
-          updated[closestIdx] = true;
-          this.tappedBeats.set(updated);
-        }
+    // Encontra a batida não-rest mais próxima ainda não acertada dentro da tolerância
+    let closestIdx = -1;
+    let closestDist = Infinity;
+    const statuses = this.rhythmBeatStatus();
+
+    for (let i = 0; i < this.rhythmExpectedTimes.length; i++) {
+      if (ex.pattern[i] === 'rest') continue;
+      if (statuses[i] === 'hit') continue;
+      const dist = Math.abs(now - this.rhythmExpectedTimes[i]);
+      if (dist < closestDist && dist <= ex.toleranceMs) {
+        closestDist = dist;
+        closestIdx = i;
       }
+    }
+
+    if (closestIdx >= 0) {
+      // Toque correto — marca a batida como acertada
+      const updated = [...statuses];
+      updated[closestIdx] = 'hit';
+      this.rhythmBeatStatus.set(updated);
+
+      const tapped = [...this.tappedBeats()];
+      tapped[closestIdx] = true;
+      this.tappedBeats.set(tapped);
+      this.showRhythmTapFeedback('correct');
+    } else {
+      // Toque fora do tempo — erro
+      this.rhythmExtraTaps.update(n => n + 1);
+      this.showRhythmTapFeedback('wrong');
     }
 
     setTimeout(() => this.tapping.set(false), 100);
   }
 
-  submitRhythm(): void {
+  private showRhythmTapFeedback(type: 'correct' | 'wrong'): void {
+    this.rhythmTapFeedback.set(type);
+    setTimeout(() => this.rhythmTapFeedback.set(null), 300);
+  }
+
+  private evaluateRhythm(): void {
     const ex = this.currentExercise() as RhythmExercise;
     if (!ex) return;
     this.clearRhythmTimer();
 
-    // Avalia: para cada batida esperada (não-rest), verifica o toque mais próximo no tempo
-    const nonRestIndices = ex.pattern
-      .map((b, i) => ({ b, i }))
-      .filter(x => x.b !== 'rest')
-      .map(x => x.i);
-
-    let hits = 0;
-    for (const idx of nonRestIndices) {
-      const expected = this.rhythmExpectedTimes[idx];
-      if (!expected) continue;
-      const closest = this.rhythmTapTimes.reduce(
-        (best, t) => Math.abs(t - expected) < Math.abs(best - expected) ? t : best,
-        Infinity,
-      );
-      if (Math.abs(closest - expected) <= ex.toleranceMs) hits++;
+    // Marca batidas não-rest que não foram acertadas como 'miss'
+    const statuses = [...this.rhythmBeatStatus()];
+    for (let i = 0; i < ex.pattern.length; i++) {
+      if (ex.pattern[i] !== 'rest' && statuses[i] === 'pending') {
+        statuses[i] = 'miss';
+      }
     }
+    this.rhythmBeatStatus.set(statuses);
 
-    const correct = hits >= Math.ceil(nonRestIndices.length * 0.6);
+    const nonRestCount = ex.pattern.filter(b => b !== 'rest').length;
+    const hits = statuses.filter(s => s === 'hit').length;
+    const misses = nonRestCount - hits;
+    const extras = this.rhythmExtraTaps();
+    const totalErrors = misses + extras;
+
+    // Quase perfeito: max 1 erro para padrões com 6+ batidas, zero para menores
+    const maxErrors = nonRestCount >= 6 ? 1 : 0;
+    const correct = totalErrors <= maxErrors;
+
     this.finishExercise(correct, correct ? ex.xpReward : 0);
   }
 
@@ -585,9 +623,12 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.tappedBeats.set([]);
     this.activeBeat.set(-1);
     this.countdown.set(-1);
-    this.rhythmTapTimes = [];
     this.rhythmExpectedTimes = [];
     this.rhythmBeatIndex = 0;
+    this.rhythmBeatStatus.set([]);
+    this.rhythmExtraTaps.set(0);
+    this.rhythmTapFeedback.set(null);
+    this.rhythmActive.set(false);
     this.clearRhythmTimer();
     // Reinicia estado de melodia
     this.melodyPhase.set('listen');

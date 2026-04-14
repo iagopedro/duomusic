@@ -214,6 +214,14 @@
         &--tapped {
           border-color: #22c55e;
         }
+        &--hit {
+          border-color: #22c55e;
+          background: color-mix(in srgb, #22c55e 20%, transparent);
+        }
+        &--miss {
+          border-color: #ef4444;
+          background: color-mix(in srgb, #ef4444 20%, transparent);
+        }
         &--eighth { width: 40px; height: 40px; font-size: 1.2rem; }
         &--rest { opacity: 0.45; }
       }
@@ -239,6 +247,18 @@
         &--active {
           transform: scale(0.94);
           background: color-mix(in srgb, var(--color-primary) 28%, transparent);
+        }
+
+        &--correct {
+          border-color: #22c55e;
+          background: color-mix(in srgb, #22c55e 30%, transparent);
+          color: #22c55e;
+        }
+
+        &--wrong {
+          border-color: #ef4444;
+          background: color-mix(in srgb, #ef4444 30%, transparent);
+          color: #ef4444;
         }
 
         &--disabled {

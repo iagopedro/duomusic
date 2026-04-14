@@ -66,7 +66,8 @@
                 <div
                   class="practice__beat"
                   [class.practice__beat--active]="activeBeat() === i"
-                  [class.practice__beat--tapped]="tappedBeats()[i]"
+                  [class.practice__beat--hit]="rhythmBeatStatus()[i] === 'hit'"
+                  [class.practice__beat--miss]="rhythmBeatStatus()[i] === 'miss'"
                   [class]="'practice__beat--' + beat"
                 >
                   <span>{{ beat === 'quarter' ? '♩' : beat === 'eighth' ? '♪' : '𝄽' }}</span>
@@ -77,7 +78,9 @@
               <div
                 class="practice__space-indicator"
                 [class.practice__space-indicator--active]="tapping()"
-                [class.practice__space-indicator--disabled]="countdown() >= 0"
+                [class.practice__space-indicator--correct]="rhythmTapFeedback() === 'correct'"
+                [class.practice__space-indicator--wrong]="rhythmTapFeedback() === 'wrong'"
+                [class.practice__space-indicator--disabled]="!rhythmActive()"
                 aria-label="Pressione Espaço para tocar"
               >
                 <span class="practice__space-key">ESPAÇO</span>
@@ -86,17 +89,13 @@
             <div class="practice__rhythm-actions">
               <app-primary-button
                 variant="secondary"
-                [disabled]="countdown() >= 0"
+                [disabled]="rhythmActive()"
                 (clicked)="startRhythm()"
+                style="width: 100%"
               >
                 <mat-icon aria-hidden="true">play_arrow</mat-icon>
                 {{ i18n.t('exercise.rhythm.start') }}
               </app-primary-button>
-              <app-primary-button
-                [disabled]="tappedBeats().filter(t => t).length === 0"
-                (clicked)="submitRhythm()"
-                [ariaLabel]="i18n.t('practice.submit')"
-              >{{ i18n.t('practice.submit') }}</app-primary-button>
             </div>
           </app-glass-panel>
         }

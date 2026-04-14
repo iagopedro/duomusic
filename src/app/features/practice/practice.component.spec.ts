@@ -331,16 +331,17 @@ describe('PracticeComponent — rhythm exercise', () => {
   it('spacebar keydown should trigger handleTap during rhythm exercise', async () => {
     const { component } = await createFixture('fundamentals');
     component.startPractice();
+    component.rhythmActive.set(true);
     vi.useFakeTimers();
     const tapSpy = vi.spyOn(component, 'handleTap');
     document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
     expect(tapSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('spacebar keydown should NOT trigger handleTap during countdown', async () => {
+  it('spacebar keydown should NOT trigger handleTap when rhythm is not active', async () => {
     const { component } = await createFixture('fundamentals');
     component.startPractice();
-    component.countdown.set(2);
+    component.rhythmActive.set(false);
     const tapSpy = vi.spyOn(component, 'handleTap');
     document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
     expect(tapSpy).not.toHaveBeenCalled();
@@ -372,41 +373,60 @@ describe('PracticeComponent — rhythm exercise', () => {
     expect(component.countdown()).toBe(3);
   });
 
-  it('submitRhythm() with all beats tapped on time should be correct', async () => {
+  it('evaluateRhythm() with all beats hit should be correct', async () => {
     const { component, progressSpy } = await createFixture('fundamentals');
     component.startPractice();
 
     const ex = component.currentExercise() as any;
-    const msBeat = (60 / ex.bpm) * 1000;
 
-    // Injeta tempos esperados como se a contagem regressiva tivesse terminado
-    const now = Date.now();
-    let cumulative = 0;
-    component['rhythmExpectedTimes'] = ex.pattern.map((note: string) => {
-      const t = now + cumulative;
-      cumulative += note === 'eighth' ? msBeat / 2 : msBeat;
-      return t;
-    });
-    component.tappedBeats.set(new Array(ex.pattern.length).fill(false));
+    // Simula que todos os beats não-rest foram acertados
+    const statuses = ex.pattern.map((note: string) =>
+      note === 'rest' ? 'pending' : 'hit'
+    );
+    component.rhythmBeatStatus.set(statuses);
+    component.rhythmExtraTaps.set(0);
 
-    // Toca cada beat não-rest exatamente no tempo esperado
-    for (let i = 0; i < ex.pattern.length; i++) {
-      if (ex.pattern[i] !== 'rest') {
-        component['rhythmTapTimes'].push(component['rhythmExpectedTimes'][i]);
-        const updated = [...component.tappedBeats()];
-        updated[i] = true;
-        component.tappedBeats.set(updated);
-      }
-    }
-
-    component.submitRhythm();
+    component['evaluateRhythm']();
 
     expect(component.phase()).toBe('feedback');
     expect(component.lastCorrect()).toBe(true);
     expect(progressSpy.recordResult).toHaveBeenCalled();
   });
 
-  it('submitRhythm() with no taps should be incorrect', async () => {
+  it('evaluateRhythm() with no taps should be incorrect', async () => {
+    const { component } = await createFixture('fundamentals');
+    component.startPractice();
+
+    const ex = component.currentExercise() as any;
+
+    // Simula que nenhum beat foi acertado (todos pending)
+    component.rhythmBeatStatus.set(new Array(ex.pattern.length).fill('pending'));
+    component.rhythmExtraTaps.set(0);
+
+    component['evaluateRhythm']();
+
+    expect(component.lastCorrect()).toBe(false);
+  });
+
+  it('evaluateRhythm() with extra taps should be incorrect', async () => {
+    const { component } = await createFixture('fundamentals');
+    component.startPractice();
+
+    const ex = component.currentExercise() as any;
+
+    // Todos beats acertados mas com toques extras
+    const statuses = ex.pattern.map((note: string) =>
+      note === 'rest' ? 'pending' : 'hit'
+    );
+    component.rhythmBeatStatus.set(statuses);
+    component.rhythmExtraTaps.set(3);
+
+    component['evaluateRhythm']();
+
+    expect(component.lastCorrect()).toBe(false);
+  });
+
+  it('handleTap() within tolerance should mark beat as hit', async () => {
     const { component } = await createFixture('fundamentals');
     component.startPractice();
 
@@ -414,18 +434,37 @@ describe('PracticeComponent — rhythm exercise', () => {
     const msBeat = (60 / ex.bpm) * 1000;
     const now = Date.now();
     let cumulative = 0;
-    // Tempos esperados 5 segundos no passado — nenhum toque pode corresponder dentro da tolerância
     component['rhythmExpectedTimes'] = ex.pattern.map((note: string) => {
-      const t = now - 5000 + cumulative;
+      const t = now + cumulative;
       cumulative += note === 'eighth' ? msBeat / 2 : msBeat;
       return t;
     });
-    component.tappedBeats.set(new Array(ex.pattern.length).fill(true));
-    component['rhythmTapTimes'] = [now];
+    component.rhythmBeatStatus.set(new Array(ex.pattern.length).fill('pending'));
+    component.tappedBeats.set(new Array(ex.pattern.length).fill(false));
+    component.rhythmActive.set(true);
 
-    component.submitRhythm();
+    component.handleTap();
 
-    expect(component.lastCorrect()).toBe(false);
+    // Primeiro beat não-rest deve ter sido marcado como 'hit'
+    const firstNonRest = ex.pattern.findIndex((b: string) => b !== 'rest');
+    expect(component.rhythmBeatStatus()[firstNonRest]).toBe('hit');
+    expect(component.rhythmTapFeedback()).toBe('correct');
+  });
+
+  it('handleTap() far from any beat should count as extra tap', async () => {
+    const { component } = await createFixture('fundamentals');
+    component.startPractice();
+
+    const ex = component.currentExercise() as any;
+    // Tempos esperados 10 segundos no passado
+    component['rhythmExpectedTimes'] = ex.pattern.map(() => Date.now() - 10000);
+    component.rhythmBeatStatus.set(new Array(ex.pattern.length).fill('pending'));
+    component.rhythmActive.set(true);
+
+    component.handleTap();
+
+    expect(component.rhythmExtraTaps()).toBe(1);
+    expect(component.rhythmTapFeedback()).toBe('wrong');
   });
 
   it('noteDurationMs should return half beat for eighth note', async () => {
@@ -498,10 +537,14 @@ describe('PracticeComponent — feedback phase', () => {
     expect(typeof component.explanationText()).toBe('string');
   });
 
-  it('explanationText() should be null for rhythm exercises', async () => {
+  it('explanationText() for rhythm should return description', async () => {
     const { component } = await createFixture('fundamentals');
     component.startPractice();
-    expect(component.explanationText()).toBeNull();
+    // Simula que o exercício terminou com acerto
+    component.lastCorrect.set(true);
+    component.phase.set('feedback');
+    expect(component.explanationText()).toBeTruthy();
+    expect(typeof component.explanationText()).toBe('string');
   });
 });
 
