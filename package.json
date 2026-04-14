@@ -46,6 +46,7 @@
     "@angular/compiler-cli": "^21.1.0",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
+    "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.0.3",
     "jsdom": "^27.1.0",
     "prettier": "^3.8.1",

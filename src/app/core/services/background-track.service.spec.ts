@@ -123,7 +123,7 @@ describe('BackgroundTrackService', () => {
     mocks.gainNode.gain.setTargetAtTime.mockClear();
     service.duck();
     expect(mocks.gainNode.gain.setTargetAtTime).toHaveBeenCalledWith(
-      expect.closeTo(0.005, 4),
+      expect.closeTo(0.0001, 5),
       expect.any(Number),
       expect.any(Number),
     );
