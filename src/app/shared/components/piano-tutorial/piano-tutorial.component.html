@@ -1,0 +1,26 @@
+@if (visible()) {
+  <div class="piano-tutorial__overlay" [@overlay] (click)="confirm()">
+    <div class="piano-tutorial__modal" [@modal] (click)="$event.stopPropagation()">
+      <h2 class="piano-tutorial__title">{{ i18n.t('piano.tutorial.title') }}</h2>
+      <p class="piano-tutorial__subtitle">{{ i18n.t('piano.tutorial.subtitle') }}</p>
+
+      <app-piano-keyboard [showKeyboardHints]="true" [disabled]="true" />
+
+      <div class="piano-tutorial__key-grid">
+        @for (key of allKeys; track key.note) {
+          <div class="piano-tutorial__key-item" [class.piano-tutorial__key-item--black]="key.isBlack">
+            <kbd class="piano-tutorial__kbd">{{ key.keyboardKey.toUpperCase() }}</kbd>
+            <span class="piano-tutorial__arrow">→</span>
+            <span class="piano-tutorial__note">{{ key.note }}</span>
+          </div>
+        }
+      </div>
+
+      <app-primary-button
+        style="width: 100%"
+        (clicked)="confirm()"
+        [ariaLabel]="i18n.t('piano.tutorial.confirm')"
+      >{{ i18n.t('piano.tutorial.confirm') }}</app-primary-button>
+    </div>
+  </div>
+}

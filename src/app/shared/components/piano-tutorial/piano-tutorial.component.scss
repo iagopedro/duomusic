@@ -1,0 +1,88 @@
+.piano-tutorial {
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+  }
+
+  &__modal {
+    background: var(--color-surface, #1a1a2e);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-lg, 16px);
+    padding: 1.5rem;
+    max-width: 480px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-on-surface, #fff);
+    text-align: center;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 0.9rem;
+    color: var(--color-on-surface-muted, #aaa);
+    text-align: center;
+    margin: 0;
+  }
+
+  &__key-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.4rem;
+  }
+
+  &__key-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+    font-size: 0.8rem;
+
+    &--black {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  &__kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-primary, #6366f1);
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-family: inherit;
+  }
+
+  &__arrow {
+    color: var(--color-on-surface-muted, #aaa);
+    font-size: 0.7rem;
+  }
+
+  &__note {
+    color: var(--color-on-surface, #fff);
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+}
