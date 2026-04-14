@@ -34,7 +34,7 @@ export class BackgroundTrackService {
   private currentVolume = 0.01;
   private unduckTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private static readonly DUCK_VOLUME = 0.005;
+  private static readonly DUCK_VOLUME = 0.0001;
 
   /**
    * Configurações de trilha por módulo.
@@ -47,7 +47,7 @@ export class BackgroundTrackService {
       detuneCents: 5,
       lfoRate: 0.15,
       lfoDepth: 3,
-      volume: 0.01,
+      volume: 0.001,
     },
     intervals: {
       frequencies: [87.31, 130.81, 174.61],    // F2 C3 F3 — Fá maior, espaçoso
@@ -55,7 +55,7 @@ export class BackgroundTrackService {
       detuneCents: 8,
       lfoRate: 0.1,
       lfoDepth: 4,
-      volume: 0.01,
+      volume: 0.001,
     },
     scales: {
       frequencies: [110.00, 164.81, 220.00],   // A2 E3 A3 — Lá menor, etéreo
@@ -63,7 +63,7 @@ export class BackgroundTrackService {
       detuneCents: 6,
       lfoRate: 0.08,
       lfoDepth: 5,
-      volume: 0.01,
+      volume: 0.001,
     },
     chords: {
       frequencies: [98.00, 146.83, 246.94],    // G2 D3 B3 — Sol maior, encorpado
@@ -71,7 +71,7 @@ export class BackgroundTrackService {
       detuneCents: 4,
       lfoRate: 0.12,
       lfoDepth: 3,
-      volume: 0.01,
+      volume: 0.001,
     },
     mixed: {
       frequencies: [73.42, 110.00, 146.83, 174.61], // D2 A2 D3 F3 — Ré menor, misterioso
@@ -79,7 +79,7 @@ export class BackgroundTrackService {
       detuneCents: 7,
       lfoRate: 0.2,
       lfoDepth: 4,
-      volume: 0.01,
+      volume: 0.001,
     },
   };
 
