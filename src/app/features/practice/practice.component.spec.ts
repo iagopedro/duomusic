@@ -328,17 +328,47 @@ describe('PracticeComponent — rhythm exercise', () => {
     expect(component.tapping()).toBe(false);
   });
 
+  it('spacebar keydown should trigger handleTap during rhythm exercise', async () => {
+    const { component } = await createFixture('fundamentals');
+    component.startPractice();
+    vi.useFakeTimers();
+    const tapSpy = vi.spyOn(component, 'handleTap');
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
+    expect(tapSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('spacebar keydown should NOT trigger handleTap during countdown', async () => {
+    const { component } = await createFixture('fundamentals');
+    component.startPractice();
+    component.countdown.set(2);
+    const tapSpy = vi.spyOn(component, 'handleTap');
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
+    expect(tapSpy).not.toHaveBeenCalled();
+  });
+
+  it('spacebar keydown should NOT trigger handleTap during non-rhythm exercise', async () => {
+    const { component } = await createFixture('intervals');
+    component.startPractice();
+    const tapSpy = vi.spyOn(component, 'handleTap');
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
+    expect(tapSpy).not.toHaveBeenCalled();
+  });
+
   it('countdown should start at -1', async () => {
     const { component } = await createFixture('fundamentals');
     expect(component.countdown()).toBe(-1);
   });
 
-  it('startRhythm() should set countdown to 3 after audio resolves', async () => {
+  it('startRhythm() should set countdown to 3 after schedule offset', async () => {
+    vi.useFakeTimers();
     const { component } = await createFixture('fundamentals');
     component.startPractice();
     component.startRhythm();
     // audio.resume() retorna uma promise já resolvida; flush do microtask .then()
     await Promise.resolve();
+    // countdown permanece -1 até o offset (200 ms) passar
+    expect(component.countdown()).toBe(-1);
+    vi.advanceTimersByTime(200);
     expect(component.countdown()).toBe(3);
   });
 

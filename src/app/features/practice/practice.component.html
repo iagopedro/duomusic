@@ -74,18 +74,14 @@
               }
             </div>
             <div class="practice__rhythm-controls">
-              <button
-                class="practice__tap-btn"
-                [class.practice__tap-btn--active]="tapping()"
-                [disabled]="countdown() >= 0"
-                (click)="handleTap()"
-                (keydown.enter)="handleTap()"
-                (keydown.space)="handleTap()"
-                [attr.aria-label]="i18n.t('exercise.rhythm.tap')"
+              <div
+                class="practice__space-indicator"
+                [class.practice__space-indicator--active]="tapping()"
+                [class.practice__space-indicator--disabled]="countdown() >= 0"
+                aria-label="Pressione Espaço para tocar"
               >
-                <mat-icon aria-hidden="true">touch_app</mat-icon>
-                <span>{{ i18n.t('exercise.rhythm.tap') }}</span>
-              </button>
+                <span class="practice__space-key">ESPAÇO</span>
+              </div>
             </div>
             <div class="practice__rhythm-actions">
               <app-primary-button

@@ -219,7 +219,20 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  private readonly onKeydown = (event: KeyboardEvent): void => {
+    if (
+      event.code === 'Space' &&
+      this.phase() === 'exercise' &&
+      this.currentExercise()?.type === 'rhythm' &&
+      this.countdown() < 0
+    ) {
+      event.preventDefault();
+      this.handleTap();
+    }
+  };
+
   ngOnInit(): void {
+    document.addEventListener('keydown', this.onKeydown);
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') as ModuleId;
     const exerciseList = this.api.getExercisesForModule(this.moduleId);
     if (!exerciseList.length) {
@@ -230,6 +243,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('keydown', this.onKeydown);
     this.bgTrack.stop();
     this.clearRhythmTimer();
     this.clearMelodyTimers();
@@ -397,18 +411,20 @@ export class PracticeComponent implements OnInit, OnDestroy {
       });
 
       // ─────────────────────────────────────────────────────────────────────
-      // Atualizações VISUAIS: imediatas, sem delay artificial.
-      // (A dessincronização com o áudio é tolerável e já existia antes.)
+      // Atualizações VISUAIS: atrasadas pelo mesmo offset de agendamento
+      // do áudio para manter sincronia entre a borda verde e o som.
       // ─────────────────────────────────────────────────────────────────────
+      const offsetMs = this.audio.getScheduleOffsetMs();
       const t = (delay: number, fn: () => void) => {
-        this.rhythmTimers.push(setTimeout(fn, delay));
+        this.rhythmTimers.push(setTimeout(fn, offsetMs + delay));
       };
 
-      this.countdown.set(3);
-      t(msBeat,      () => this.countdown.set(2));
-      t(2 * msBeat,  () => this.countdown.set(1));
-      t(3 * msBeat,  () => this.countdown.set(0));  // GO!
-      t(4 * msBeat,  () => this.countdown.set(-1)); // esconde
+      this.countdown.set(-1); // esconde até o offset passar
+      t(0,            () => this.countdown.set(3));
+      t(msBeat,       () => this.countdown.set(2));
+      t(2 * msBeat,   () => this.countdown.set(1));
+      t(3 * msBeat,   () => this.countdown.set(0));  // GO!
+      t(4 * msBeat,   () => this.countdown.set(-1)); // esconde
 
       const rhythmVisualStart = 4 * msBeat;
       let cumMs = 0;
@@ -426,8 +442,8 @@ export class PracticeComponent implements OnInit, OnDestroy {
       });
       t(rhythmVisualStart + cumMs, () => this.activeBeat.set(-1));
 
-      // Expected tap times: alinhados com o instante visual (quando o usuário vê o beat)
-      const rhythmStartMs = Date.now() + 4 * msBeat;
+      // Expected tap times: alinhados com visual + áudio (ambos usam o mesmo offset)
+      const rhythmStartMs = Date.now() + offsetMs + 4 * msBeat;
       let msCum = 0;
       this.rhythmExpectedTimes = ex.pattern.map(note => {
         const time = rhythmStartMs + msCum;

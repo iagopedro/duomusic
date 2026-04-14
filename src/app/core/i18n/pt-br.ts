@@ -71,10 +71,9 @@ export const PT_BR = {
 
   // Exercise types
   'exercise.rhythm.title': 'Ritmo',
-  'exercise.rhythm.desc': 'Toque no botão no tempo certo!',
-  'exercise.rhythm.tap': 'Toque aqui!',
+  'exercise.rhythm.desc': 'Pressione Espaço no tempo certo!',
   'exercise.rhythm.start': 'Iniciar ritmo',
-  'exercise.rhythm.hint': '1. Pressione "Iniciar ritmo" para ouvir o compasso  2. Toque no botão junto com cada batida  3. Confirme sua resposta',
+  'exercise.rhythm.hint': '1. Pressione "Iniciar ritmo" para ouvir o compasso  2. Pressione Espaço junto com cada batida  3. Confirme sua resposta',
   'exercise.interval.title': 'Treino de intervalos',
   'exercise.interval.desc': 'Ouça o intervalo e identifique o tipo.',
   'exercise.interval.question': 'Que intervalo você ouviu?',
