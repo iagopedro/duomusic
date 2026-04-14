@@ -158,7 +158,6 @@ export const PT_BR = {
   // Piano tutorial
   'piano.tutorial.title': 'Mapeamento do Teclado',
   'piano.tutorial.subtitle': 'Use o teclado do computador para tocar o piano virtual',
-  'piano.tutorial.dont_show': 'Não exibir novamente',
   'piano.tutorial.confirm': 'Entendi!',
   'piano.tutorial.help_btn': 'Ver atalhos do teclado',
 } as const;

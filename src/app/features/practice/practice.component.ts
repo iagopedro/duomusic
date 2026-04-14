@@ -231,6 +231,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   // Tutorial do piano
   readonly showTutorial = signal(false);
+  private tutorialAutoShown = false;
 
   readonly i18n = inject(I18nService);
   private readonly api = inject(ApiService);
@@ -287,10 +288,15 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   closeTutorial(): void {
+    if (this.tutorialAutoShown) {
+      this.storage.set(TUTORIAL_STORAGE_KEY, true);
+    }
+    this.tutorialAutoShown = false;
     this.showTutorial.set(false);
   }
 
   openTutorial(): void {
+    this.tutorialAutoShown = false;
     this.showTutorial.set(true);
   }
 
@@ -298,6 +304,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     const ex = this.currentExercise();
     const isPiano = ex?.type === 'note-id' || ex?.type === 'melody';
     if (isPiano && !this.storage.get<boolean>(TUTORIAL_STORAGE_KEY, false)) {
+      this.tutorialAutoShown = true;
       this.showTutorial.set(true);
     }
   }

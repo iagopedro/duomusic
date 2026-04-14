@@ -1,15 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { PianoTutorialComponent, TUTORIAL_STORAGE_KEY } from './piano-tutorial.component';
-import { StorageService } from '../../../core/storage/storage.service';
+import { PianoTutorialComponent } from './piano-tutorial.component';
 import { AudioService } from '../../../core/services/audio.service';
-
-function makeStorageSpy() {
-  return {
-    get: vi.fn().mockReturnValue(false),
-    set: vi.fn(),
-  };
-}
 
 function makeAudioSpy() {
   return {
@@ -21,14 +13,11 @@ function makeAudioSpy() {
 describe('PianoTutorialComponent', () => {
   let fixture: ComponentFixture<PianoTutorialComponent>;
   let component: PianoTutorialComponent;
-  let storageSpy: ReturnType<typeof makeStorageSpy>;
 
   beforeEach(async () => {
-    storageSpy = makeStorageSpy();
     await TestBed.configureTestingModule({
       imports: [PianoTutorialComponent, NoopAnimationsModule],
       providers: [
-        { provide: StorageService, useValue: storageSpy },
         { provide: AudioService, useValue: makeAudioSpy() },
       ],
     }).compileComponents();
@@ -69,16 +58,16 @@ describe('PianoTutorialComponent', () => {
     expect(spy).toHaveBeenCalled();
   });
 
-  it('confirm() should NOT save to storage when checkbox is unchecked', () => {
-    component.dontShowAgain.set(false);
-    component.confirm();
-    expect(storageSpy.set).not.toHaveBeenCalled();
+  it('confirm() should NOT interact with storage', () => {
+    // The component no longer has storage — confirm just emits
+    expect(() => component.confirm()).not.toThrow();
   });
 
-  it('confirm() should save to storage when checkbox is checked', () => {
-    component.dontShowAgain.set(true);
-    component.confirm();
-    expect(storageSpy.set).toHaveBeenCalledWith(TUTORIAL_STORAGE_KEY, true);
+  it('should not render checkbox in modal', () => {
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    const checkbox = fixture.nativeElement.querySelector('input[type="checkbox"]');
+    expect(checkbox).toBeNull();
   });
 
   it('clicking overlay should call confirm()', () => {

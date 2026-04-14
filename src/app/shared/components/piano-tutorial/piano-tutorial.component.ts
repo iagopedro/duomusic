@@ -1,9 +1,8 @@
 import {
-  Component, ChangeDetectionStrategy, input, output, signal, inject,
+  Component, ChangeDetectionStrategy, input, output, inject,
 } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { StorageService } from '../../../core/storage/storage.service';
 import { PianoKeyboardComponent } from '../piano-keyboard/piano-keyboard.component';
 import { ALL_KEYS } from '../piano-keyboard/piano-keyboard.component';
 import { PrimaryButtonComponent } from '../primary-button/primary-button.component';
@@ -52,15 +51,6 @@ export const TUTORIAL_STORAGE_KEY = 'duomusic_piano_tutorial_seen';
               </div>
             }
           </div>
-
-          <label class="piano-tutorial__checkbox-label">
-            <input
-              type="checkbox"
-              [checked]="dontShowAgain()"
-              (change)="dontShowAgain.set(!dontShowAgain())"
-            />
-            {{ i18n.t('piano.tutorial.dont_show') }}
-          </label>
 
           <app-primary-button
             style="width: 100%"
@@ -159,23 +149,6 @@ export const TUTORIAL_STORAGE_KEY = 'duomusic_piano_tutorial_seen';
         font-weight: 600;
         font-size: 0.8rem;
       }
-
-      &__checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-        color: var(--color-on-surface-muted, #aaa);
-        cursor: pointer;
-        user-select: none;
-
-        input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          accent-color: var(--color-primary, #6366f1);
-          cursor: pointer;
-        }
-      }
     }
   `],
 })
@@ -183,16 +156,11 @@ export class PianoTutorialComponent {
   readonly visible = input(false);
   readonly closed = output<void>();
 
-  readonly dontShowAgain = signal(false);
   readonly allKeys = ALL_KEYS;
 
   readonly i18n = inject(I18nService);
-  private readonly storage = inject(StorageService);
 
   confirm(): void {
-    if (this.dontShowAgain()) {
-      this.storage.set(TUTORIAL_STORAGE_KEY, true);
-    }
     this.closed.emit();
   }
 }
