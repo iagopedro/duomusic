@@ -296,13 +296,18 @@
                 (clicked)="retry()"
                 [ariaLabel]="i18n.t('practice.retry')"
               >{{ i18n.t('practice.retry') }}</app-primary-button>
+              <app-primary-button
+                (clicked)="nextExercise()"
+                [ariaLabel]="isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next')"
+              >
+                {{ isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next') }}
+              </app-primary-button>
             }
-            <app-primary-button
-              (clicked)="nextExercise()"
-              [ariaLabel]="isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next')"
-            >
-              {{ isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next') }}
-            </app-primary-button>
+            @if (lastCorrect()) {
+              <div class="practice__auto-advance-bar">
+                <div class="practice__auto-advance-fill"></div>
+              </div>
+            }
           </div>
         </app-glass-panel>
       </div>

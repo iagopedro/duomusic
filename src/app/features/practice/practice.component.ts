@@ -106,6 +106,11 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private rhythmBeatIndex = 0;
   private rhythmExpectedTimes: number[] = [];
 
+  // Auto-avanço após acerto
+  readonly autoAdvancing = signal(false);
+  private autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly AUTO_ADVANCE_MS = 1400;
+
   readonly moduleName = computed(() => {
     const mod = this.api.modules().find(m => m.id === this.moduleId);
     return mod ? this.i18n.tStr(mod.nameKey) : '';
@@ -259,6 +264,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.clearRhythmTimer();
     this.clearMelodyTimers();
     if (this.noteHintTimer) clearTimeout(this.noteHintTimer);
+    this.cancelAutoAdvance();
   }
 
   startPractice(): void {
@@ -550,6 +556,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   // ── Navigation ────────────────────────────────────────────────────────────
 
   retry(): void {
+    this.cancelAutoAdvance();
     this.resetExerciseState();
     this.phase.set('exercise');
     this.exerciseStartMs = Date.now();
@@ -616,6 +623,22 @@ export class PracticeComponent implements OnInit, OnDestroy {
         this.audio.playTone(220, 400, 'sawtooth', undefined, 0.15);
       }
     });
+
+    if (correct) {
+      this.autoAdvancing.set(true);
+      this.autoAdvanceTimer = setTimeout(() => {
+        this.autoAdvancing.set(false);
+        this.nextExercise();
+      }, PracticeComponent.AUTO_ADVANCE_MS);
+    }
+  }
+
+  private cancelAutoAdvance(): void {
+    if (this.autoAdvanceTimer !== null) {
+      clearTimeout(this.autoAdvanceTimer);
+      this.autoAdvanceTimer = null;
+    }
+    this.autoAdvancing.set(false);
   }
 
   private resetExerciseState(): void {
