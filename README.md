@@ -160,8 +160,8 @@ src/
 │       └── components/
 │           ├── badge-chip/        # Tag de conquista
 │           ├── glass-panel/       # Card com visual de vidro fosco
-│           ├── module-card/       # Card de módulo na home
-│           ├── primary-button/    # Botão principal da UI
+│           ├── module-card/       # Card de módulo na home            ├── piano-keyboard/    # Teclado de piano interativo (C4–C5)
+            ├── piano-tutorial/    # Overlay de mapeamento de teclas│           ├── primary-button/    # Botão principal da UI
 │           └── xp-bar/            # Barra de progresso de XP
 │
 └── styles.scss                # Tema global, variáveis CSS
@@ -315,6 +315,53 @@ O aluno ouve três notas tocadas simultaneamente e deve identificar a qualidade 
 | dim | 0, +3, +6 semitons |
 | aug | 0, +4, +8 semitons |
 
+### 7.4 Exercício de Identificação de Nota (`NoteExercise`)
+
+O aluno ouve uma nota e deve identificá-la. O piano virtual fica disponível para **exploração livre** antes da resposta.
+
+```typescript
+interface NoteExercise extends BaseExercise {
+  type: 'note-id';
+  noteFreq: number;   // frequência da nota tocada
+  noteName: string;   // resposta correta, ex.: 'C4'
+  showHint: boolean;  // pisca brevemente a tecla-alvo antes de esconder
+}
+```
+
+**Fluxo do exercício:**
+1. A aplicação toca a nota; se `showHint=true`, a tecla pisca brevemente
+2. O piano fica disponível para **exploração livre** — o aluno toca quantas teclas quiser sem avaliação
+3. O aluno seleciona a resposta entre **4 alternativas** (nota correta + 3 distratoras naturais)
+4. A avaliação ocorre na seleção da alternativa
+
+### 7.5 Exercício de Melodia (`MelodyExercise`)
+
+O aluno ouve uma melodia e deve reproduzi-la no piano. Inclui **exploração livre** antes da tentativa avaliada.
+
+```typescript
+interface MelodyExercise extends BaseExercise {
+  type: 'melody';
+  notes: MelodyNote[];  // sequência de { note, freq, durationMs }
+  bpm: number;
+}
+```
+
+**Fluxo do exercício:**
+1. **`listen`** — aplicação toca a melodia com iluminação das teclas; aluno pode ouvir novamente
+2. **`explore`** — piano livre para exploração, sem avaliação e sem limite de tempo
+3. **`countdown`** — ao acionar "Registrar tentativa", contagem regressiva **3 → 2 → 1 → GO!** sincronizada com metrônomo
+4. **`recording`** — janela de gravação: o aluno executa a melodia; encerra automaticamente após tempo limite ou ao completar todas as notas
+5. **Avaliação** — score calculado e exibido ao aluno
+
+**Cálculo do score (0%–100%):**
+
+| Componente | Peso | Critério |
+|-----------|------|----------|
+| Precisão de notas | 60% | Notas corretas na ordem certa |
+| Precisão de tempo | 40% | Proximidade ao tempo esperado de cada nota |
+
+**Critério de aprovação:** score ≥ 70%. O aluno pode repetir a tentativa quantas vezes precisar.
+
 ---
 
 ## 8. Serviços Principais
@@ -329,6 +376,7 @@ Responsável por toda a síntese de som usando a **Web Audio API** nativa do bro
 | `playTone(freq, duration, type?)` | Toca um tom simples (oscilador) |
 | `playInterval(rootFreq, semitones, duration)` | Toca dois tons em sequência |
 | `playChord(rootFreq, chordType, duration)` | Toca três tons simultâneos |
+| `playMelody(notes, onNoteStart?)` | Pré-agenda uma sequência de notas com callback por nota |
 | `playMetronomeTick(isAccent)` | Clique de metrônomo (forte no beat 0) |
 | `setMasterVolume(value)` | Ajusta o volume geral (0 a 1) |
 
@@ -408,9 +456,18 @@ intro ──► exercise ──► feedback ──► (próximo exercício ou re
 | Fase | O que acontece |
 |------|---------------|
 | `intro` | Apresenta o módulo com contagem de exercícios e XP total |
-| `exercise` | Exibe o exercício atual (ritmo / intervalo / acorde) |
-| `feedback` | Mostra acerto/erro, explicação e XP ganho |
+| `exercise` | Exibe o exercício atual (ritmo / intervalo / acorde / note-id / melodia) |
+| `feedback` | Mostra acerto/erro, explicação, XP ganho e score (melodia) |
 | `result` | Resumo da sessão (acertos, XP total) |
+
+**Fases internas do exercício de melodia** (gerenciadas por `melodyPhase`):
+
+| Fase interna | Descrição |
+|---|---|
+| `listen` | Ouvir a melodia, piano desabilitado |
+| `explore` | Piano livre para exploração sem avaliação |
+| `countdown` | Contagem regressiva (3→2→1→GO!) antes de gravar |
+| `recording` | Janela de gravação ativa com timer automático |
 
 ### 9.4 Conquistas (`/achievements`)
 Lista todas as conquistas com status visual (conquistado em destaque, bloqueadas em cinza).
@@ -467,7 +524,7 @@ O dicionário completo em pt-BR está em `src/app/core/i18n/pt-br.ts`. O sistema
 
 ## 12. Testes Unitários
 
-O DuoMusic possui **159 testes unitários** distribuídos em 13 arquivos, executando com **Vitest 4.1**.
+O DuoMusic possui **184 testes unitários** distribuídos em 13 arquivos, executando com **Vitest 4.1**.
 
 ### Executar os testes
 
@@ -492,7 +549,7 @@ npm run test:coverage     # executa com relatório de cobertura
 | `badge-chip.component.spec.ts` | 7 | Tags de conquista |
 | `glass-panel.component.spec.ts` | 6 | Projeção de conteúdo |
 | `module-card.component.spec.ts` | 12 | Card de módulo, bloqueio, clique |
-| `practice.component.spec.ts` | 45 | Fluxo completo de prática |
+| `practice.component.spec.ts` | 70 | Fluxo completo de prática, exploração livre, gravação e scoring de melodia |
 
 ### Convenções importantes
 
@@ -578,4 +635,4 @@ O `ProgressService` verificará automaticamente essa condição após cada exerc
 
 ---
 
-*Documentação gerada em março de 2026 — DuoMusic v1.0 MVP*
+*Documentação atualizada em abril de 2026 — DuoMusic v1.1*
