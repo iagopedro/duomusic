@@ -178,7 +178,7 @@
               </p>
             } @else {
               <p class="practice__note-hint-text practice__note-hint-text--find">
-                {{ i18n.t('exercise.note.find') }}
+                {{ noteIdExploring() ? i18n.t('exercise.note.explore') : i18n.t('exercise.note.find') }}
               </p>
             }
             <button
@@ -191,11 +191,25 @@
             </button>
             <app-piano-keyboard
               [highlightedNote]="noteHintKey()"
-              [selectedNote]="selectedAnswer()?.toString() ?? null"
+              [selectedNote]="null"
               [disabled]="!!noteHintKey()"
               [showKeyboardHints]="true"
               (noteTapped)="selectNoteAndSubmit($event)"
             />
+            <!-- Alternativas para resposta -->
+            <div class="practice__note-options">
+              <div class="practice__options-grid practice__options-grid--2col">
+                @for (opt of noteIdOptions(); track opt) {
+                  <button
+                    class="practice__option-btn"
+                    [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                    (click)="selectNoteAnswer(opt)"
+                    [attr.aria-label]="'Nota ' + opt"
+                    [attr.aria-pressed]="selectedAnswer() === opt"
+                  >{{ noteLabel(opt) }}</button>
+                }
+              </div>
+            </div>
             <button
               class="practice__play-btn practice__play-btn--subtle"
               (click)="openTutorial()"
@@ -237,7 +251,7 @@
                 </button>
                 <app-primary-button
                   style="width: 100%"
-                  (clicked)="startMelodyPlay()"
+                  (clicked)="startMelodyExplore()"
                   [ariaLabel]="i18n.t('exercise.melody.start')"
                 >
                   <mat-icon aria-hidden="true">piano</mat-icon>
@@ -246,9 +260,61 @@
               </div>
             }
 
-            <!-- FASE PLAY: tocar a melodia -->
-            @if (melodyPhase() === 'play') {
-              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.play') }}</h2>
+            <!-- FASE EXPLORE: exploração livre no piano -->
+            @if (melodyPhase() === 'explore') {
+              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.explore') }}</h2>
+              <app-piano-keyboard
+                [disabled]="false"
+                [showKeyboardHints]="true"
+                (noteTapped)="tapMelodyNote($event)"
+              />
+              <div class="practice__melody-explore-actions">
+                <button
+                  class="practice__play-btn"
+                  (click)="melodyBackToListen()"
+                >
+                  <mat-icon aria-hidden="true">replay</mat-icon>
+                  {{ i18n.t('exercise.melody.replay') }}
+                </button>
+                <app-primary-button
+                  style="width: 100%"
+                  (clicked)="startMelodyRecord()"
+                  [ariaLabel]="i18n.t('exercise.melody.record')"
+                >
+                  <mat-icon aria-hidden="true">mic</mat-icon>
+                  {{ i18n.t('exercise.melody.record') }}
+                </app-primary-button>
+                <button
+                  class="practice__play-btn practice__play-btn--subtle"
+                  (click)="openTutorial()"
+                >
+                  <mat-icon aria-hidden="true">help_outline</mat-icon>
+                  {{ i18n.t('piano.tutorial.help_btn') }}
+                </button>
+              </div>
+            }
+
+            <!-- FASE COUNTDOWN: contagem regressiva antes da gravação -->
+            @if (melodyPhase() === 'countdown') {
+              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.recording') }}</h2>
+              <div class="practice__melody-countdown-container">
+                @if (melodyCountdown() >= 0) {
+                  <div class="practice__countdown"
+                       [class.practice__countdown--go]="melodyCountdown() === 0"
+                       [@countdownPop]="melodyCountdown()">
+                    {{ melodyCountdown() === 0 ? 'GO!' : melodyCountdown() }}
+                  </div>
+                }
+              </div>
+              <app-piano-keyboard
+                [disabled]="true"
+                [showKeyboardHints]="true"
+              />
+            }
+
+            <!-- FASE RECORDING: gravação ativa da melodia -->
+            @if (melodyPhase() === 'recording') {
+              <h2 class="practice__q-label practice__q-label--recording">{{ i18n.t('exercise.melody.recording') }}</h2>
               <div class="practice__melody-progress">
                 @for (n of melodyNotes(); track $index; let i = $index) {
                   <span
@@ -265,21 +331,9 @@
                 [showKeyboardHints]="true"
                 (noteTapped)="tapMelodyNote($event)"
               />
-              <div class="practice__melody-play-actions">
-                <button
-                  class="practice__play-btn practice__play-btn--subtle"
-                  (click)="openTutorial()"
-                >
-                  <mat-icon aria-hidden="true">help_outline</mat-icon>
-                  {{ i18n.t('piano.tutorial.help_btn') }}
-                </button>
-                <button
-                  class="practice__play-btn practice__play-btn--subtle"
-                  (click)="melodyPhase.set('listen'); playCurrentExercise()"
-                >
-                <mat-icon aria-hidden="true">replay</mat-icon>
-                {{ i18n.t('exercise.melody.replay') }}
-              </button>
+              <div class="practice__recording-indicator">
+                <span class="practice__recording-dot"></span>
+                {{ i18n.t('exercise.melody.recording') }}
               </div>
             }
 
@@ -302,6 +356,11 @@
             <p class="practice__feedback-explanation">
               {{ explanationText() }}
             </p>
+          }
+          @if (melodyScore() !== null) {
+            <div class="practice__feedback-score" [class.practice__feedback-score--passed]="lastCorrect()">
+              {{ i18n.t('exercise.melody.score', { score: melodyScore()! }) }}
+            </div>
           }
           @if (lastCorrect()) {
             <div class="practice__feedback-xp">

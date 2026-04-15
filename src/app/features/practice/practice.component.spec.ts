@@ -571,3 +571,261 @@ describe('PracticeComponent — computed helpers', () => {
     expect(spy).toHaveBeenCalled();
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Note-ID exercise — free exploration
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('PracticeComponent — note-id free exploration', () => {
+  async function createNoteFixture() {
+    const result = await createFixture('fundamentals');
+    const { component } = result;
+    component.startPractice();
+    // Avança até encontrar um exercício note-id
+    while (component.currentExercise()?.type !== 'note-id' && !component.isLastExercise()) {
+      component.currentIndex.update(i => i + 1);
+      component['resetExerciseState']();
+    }
+    return result;
+  }
+
+  it('should start in exploring mode', async () => {
+    const { component } = await createNoteFixture();
+    if (component.currentExercise()?.type !== 'note-id') return; // skip if no note-id
+    expect(component.noteIdExploring()).toBe(true);
+  });
+
+  it('selectNoteAndSubmit() should NOT submit when exploring', async () => {
+    const { component } = await createNoteFixture();
+    if (component.currentExercise()?.type !== 'note-id') return;
+    component.selectNoteAndSubmit('C4');
+    expect(component.phase()).toBe('exercise'); // still in exercise, not feedback
+    expect(component.selectedAnswer()).toBeNull();
+  });
+
+  it('selectNoteAnswer() should submit answer', async () => {
+    const { component, progressSpy } = await createNoteFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'note-id') return;
+    vi.useFakeTimers();
+    component.selectNoteAnswer(ex.noteName);
+    vi.advanceTimersByTime(200);
+    expect(component.phase()).toBe('feedback');
+    expect(component.lastCorrect()).toBe(true);
+    expect(progressSpy.recordResult).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('selectNoteAnswer() with wrong note should set lastCorrect=false', async () => {
+    const { component } = await createNoteFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'note-id') return;
+    vi.useFakeTimers();
+    const wrongNote = ex.noteName === 'C4' ? 'D4' : 'C4';
+    component.selectNoteAnswer(wrongNote);
+    vi.advanceTimersByTime(200);
+    expect(component.lastCorrect()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('noteIdOptions should include the correct answer', async () => {
+    const { component } = await createNoteFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'note-id') return;
+    expect(component.noteIdOptions()).toContain(ex.noteName);
+  });
+
+  it('noteIdOptions should have 4 options', async () => {
+    const { component } = await createNoteFixture();
+    if (component.currentExercise()?.type !== 'note-id') return;
+    expect(component.noteIdOptions().length).toBe(4);
+  });
+
+  it('noteLabel() should strip octave number', async () => {
+    const { component } = await createFixture('fundamentals');
+    expect(component.noteLabel('C4')).toBe('C');
+    expect(component.noteLabel('A#4')).toBe('A#');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Melody exercise — free exploration & recording
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('PracticeComponent — melody free exploration', () => {
+  async function createMelodyFixture() {
+    const result = await createFixture('fundamentals');
+    const { component } = result;
+    component.startPractice();
+    // Avança até encontrar um exercício melody
+    while (component.currentExercise()?.type !== 'melody' && !component.isLastExercise()) {
+      component.currentIndex.update(i => i + 1);
+      component['resetExerciseState']();
+    }
+    return result;
+  }
+
+  it('should start in listen phase', async () => {
+    const { component } = await createMelodyFixture();
+    if (component.currentExercise()?.type !== 'melody') return;
+    expect(component.melodyPhase()).toBe('listen');
+  });
+
+  it('startMelodyExplore() should transition to explore phase', async () => {
+    const { component } = await createMelodyFixture();
+    if (component.currentExercise()?.type !== 'melody') return;
+    component.startMelodyExplore();
+    expect(component.melodyPhase()).toBe('explore');
+  });
+
+  it('tapMelodyNote() during explore phase should not record notes', async () => {
+    const { component } = await createMelodyFixture();
+    if (component.currentExercise()?.type !== 'melody') return;
+    component.startMelodyExplore();
+    component.tapMelodyNote('C4');
+    component.tapMelodyNote('D4');
+    expect(component.melodyPlayedNotes().length).toBe(0);
+    expect(component.melodyStep()).toBe(0);
+  });
+
+  it('startMelodyRecord() should transition to countdown phase', async () => {
+    const { component } = await createMelodyFixture();
+    if (component.currentExercise()?.type !== 'melody') return;
+    component.startMelodyExplore();
+    component.startMelodyRecord();
+    await Promise.resolve();
+    expect(component.melodyPhase()).toBe('countdown');
+  });
+
+  it('melodyBackToListen() should return to listen phase', async () => {
+    const { component } = await createMelodyFixture();
+    if (component.currentExercise()?.type !== 'melody') return;
+    component.startMelodyExplore();
+    component.melodyBackToListen();
+    expect(component.melodyPhase()).toBe('listen');
+  });
+
+  it('tapMelodyNote() during recording should record notes', async () => {
+    const { component } = await createMelodyFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'melody') return;
+
+    // Simula estado de recording diretamente
+    component.melodyPhase.set('recording');
+    component.melodyRecording.set(true);
+    component['melodyRecordingStart'] = Date.now();
+    component['melodyRecordedNotes'] = [];
+
+    component.tapMelodyNote(ex.notes[0].note);
+    expect(component.melodyPlayedNotes().length).toBe(1);
+    expect(component.melodyStep()).toBe(1);
+  });
+
+  it('recording all correct notes should finish with evaluation', async () => {
+    vi.useFakeTimers();
+    const { component, progressSpy } = await createMelodyFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'melody') { vi.useRealTimers(); return; }
+
+    // Simula recording
+    component.melodyPhase.set('recording');
+    component.melodyRecording.set(true);
+    component['melodyRecordingStart'] = Date.now();
+    component['melodyRecordedNotes'] = [];
+    component.melodyStep.set(0);
+    component.melodyPlayedNotes.set([]);
+
+    // Toca todas as notas corretas
+    for (const note of ex.notes) {
+      component.tapMelodyNote(note.note);
+    }
+
+    vi.advanceTimersByTime(500);
+    expect(component.phase()).toBe('feedback');
+    expect(component.melodyScore()).not.toBeNull();
+    expect(progressSpy.recordResult).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('perfect execution should score 100%', async () => {
+    const { component } = await createMelodyFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'melody') return;
+
+    // Todas as notas certas, no tempo certo
+    const gapMs = 80;
+    const recorded: { note: string; timeMs: number }[] = [];
+    let cumMs = 0;
+    for (const note of ex.notes) {
+      recorded.push({ note: note.note, timeMs: cumMs });
+      cumMs += note.durationMs + gapMs;
+    }
+    const score = component['evaluateMelodyScore'](ex, recorded);
+    expect(score).toBe(100);
+  });
+
+  it('all wrong notes should score 0%', async () => {
+    const { component } = await createMelodyFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'melody') return;
+
+    const recorded: { note: string; timeMs: number }[] = ex.notes.map((_: any, i: number) => ({
+      note: 'X9', // nota que não existe na melodia
+      timeMs: i * 500,
+    }));
+    const score = component['evaluateMelodyScore'](ex, recorded);
+    expect(score).toBe(0);
+  });
+
+  it('empty recording should score 0%', async () => {
+    const { component } = await createMelodyFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'melody') return;
+
+    const score = component['evaluateMelodyScore'](ex, []);
+    expect(score).toBe(0);
+  });
+
+  it('score >= 70 should pass exercise', async () => {
+    vi.useFakeTimers();
+    const { component } = await createMelodyFixture();
+    const ex = component.currentExercise() as any;
+    if (ex?.type !== 'melody') { vi.useRealTimers(); return; }
+
+    // Simula recording com notas perfeitas
+    component.melodyPhase.set('recording');
+    component.melodyRecording.set(true);
+    component['melodyRecordingStart'] = Date.now();
+    component['melodyRecordedNotes'] = [];
+    component.melodyStep.set(0);
+    component.melodyPlayedNotes.set([]);
+
+    for (const note of ex.notes) {
+      component.tapMelodyNote(note.note);
+    }
+    vi.advanceTimersByTime(500);
+
+    expect(component.lastCorrect()).toBe(true);
+    expect(component.melodyScore()!).toBeGreaterThanOrEqual(70);
+    vi.useRealTimers();
+  });
+
+  it('melodyScore should be null before any attempt', async () => {
+    const { component } = await createMelodyFixture();
+    if (component.currentExercise()?.type !== 'melody') return;
+    expect(component.melodyScore()).toBeNull();
+  });
+
+  it('resetExerciseState should clear melody recording state', async () => {
+    const { component } = await createMelodyFixture();
+    component.melodyPhase.set('recording');
+    component.melodyRecording.set(true);
+    component.melodyScore.set(85);
+    component.melodyCountdown.set(2);
+    component['resetExerciseState']();
+    expect(component.melodyPhase()).toBe('listen');
+    expect(component.melodyRecording()).toBe(false);
+    expect(component.melodyScore()).toBeNull();
+    expect(component.melodyCountdown()).toBe(-1);
+  });
+});

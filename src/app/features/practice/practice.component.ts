@@ -19,6 +19,7 @@ import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-p
 import { PrimaryButtonComponent } from '../../shared/components/primary-button/primary-button.component';
 import { XpBarComponent } from '../../shared/components/xp-bar/xp-bar.component';
 import { PianoKeyboardComponent } from '../../shared/components/piano-keyboard/piano-keyboard.component';
+import { ALL_KEYS } from '../../shared/components/piano-keyboard/piano-keyboard.component';
 import { PianoTutorialComponent, TUTORIAL_STORAGE_KEY } from '../../shared/components/piano-tutorial/piano-tutorial.component';
 
 type PracticePhase = 'intro' | 'exercise' | 'feedback' | 'result';
@@ -87,12 +88,29 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private noteHintTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Estado de melodia
-  readonly melodyPhase = signal<'listen' | 'play'>('listen');
+  readonly melodyPhase = signal<'listen' | 'explore' | 'countdown' | 'recording' | 'play'>('listen');
   readonly melodyStep = signal(0);          // qual nota o usuário deve tocar agora
   readonly melodyWrongNote = signal<string | null>(null);
   readonly melodyPlayedNotes = signal<string[]>([]); // notas tocadas corretamente
   private melodyTimers: ReturnType<typeof setTimeout>[] = [];
   private melodyPlayingNote = signal<string | null>(null); // tecla acesa durante reprodução
+
+  // Estado de gravação de melodia (modo exploração livre)
+  readonly melodyCountdown = signal(-1); // -1 = hidden, 3/2/1 = counting, 0 = GO!
+  readonly melodyRecording = signal(false);
+  readonly melodyScore = signal<number | null>(null);
+  private melodyRecordedNotes: { note: string; timeMs: number }[] = [];
+  private melodyRecordingStart = 0;
+  private melodyRecordingTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Estado de note-id com exploração livre
+  readonly noteIdExploring = signal(true); // começa em exploração livre
+  readonly noteIdOptions = computed<string[]>(() => {
+    const ex = this.currentExercise();
+    if (ex?.type !== 'note-id') return [];
+    const ne = ex as NoteExercise;
+    return this.generateNoteOptions(ne.noteName);
+  });
 
   // Estado de ritmo
   readonly tapping = signal(false);
@@ -175,7 +193,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     if (ex?.type !== 'melody') return null;
     const step = this.melodyStep();
     const notes = (ex as MelodyExercise).notes;
-    if (this.melodyPhase() === 'play' && step < notes.length) {
+    if (this.melodyPhase() === 'recording' && step < notes.length) {
       return notes[step].note;
     }
     return null;
@@ -220,6 +238,12 @@ export class PracticeComponent implements OnInit, OnDestroy {
     if (ex.type === 'melody') {
       const m = ex as MelodyExercise;
       const seq = m.notes.map(n => n.note.replace(/\d/, '')).join(' → ');
+      const score = this.melodyScore();
+      if (score !== null) {
+        return correct
+          ? `Melodia completa: ${seq}. Score: ${score}%. Excelente memória musical!`
+          : `A melodia era: ${seq}. Score: ${score}%. Você precisa de 70% para avançar.`;
+      }
       return correct
         ? `Melodia completa: ${seq}. Excelente memória musical!`
         : `A melodia era: ${seq}. Ouça novamente e tente mais uma vez!`;
@@ -273,6 +297,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.clearRhythmTimer();
     this.clearMelodyTimers();
     if (this.noteHintTimer) clearTimeout(this.noteHintTimer);
+    if (this.melodyRecordingTimer) clearTimeout(this.melodyRecordingTimer);
     this.cancelAutoAdvance();
   }
 
@@ -360,8 +385,13 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   selectNoteAndSubmit(note: string): void {
+    // No modo exploração livre, apenas toca o som — não submete
+    // A submissão ocorre via selectNoteAnswer()
+  }
+
+  /** Seleciona uma das alternativas apresentadas no note-id e submete */
+  selectNoteAnswer(note: string): void {
     this.selectAnswer(note);
-    // Pequeno delay para a tecla iluminada renderizar antes da transição de feedback
     setTimeout(() => this.submitAnswer(), 150);
   }
 
@@ -380,35 +410,174 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.bgTrack.duckFor(totalMs + this.audio.getScheduleOffsetMs() + 300);
   }
 
+  /** Transição de listen → explore (exploração livre) */
+  startMelodyExplore(): void {
+    this.melodyPhase.set('explore');
+  }
+
+  /** Inicia contagem regressiva antes da gravação */
+  startMelodyRecord(): void {
+    const ex = this.currentExercise() as MelodyExercise;
+    if (!ex || ex.type !== 'melody') return;
+
+    this.melodyPhase.set('countdown');
+    this.melodyRecordedNotes = [];
+    this.melodyStep.set(0);
+    this.melodyPlayedNotes.set([]);
+
+    const msBeat = (60 / ex.bpm) * 1000;
+    const sBeat = msBeat / 1000;
+
+    this.audio.resume().then(() => {
+      const audioStart = this.audio.getScheduleStart();
+      this.audio.playMetronomeTick(false, audioStart);
+      this.audio.playMetronomeTick(false, audioStart + sBeat);
+      this.audio.playMetronomeTick(false, audioStart + 2 * sBeat);
+
+      const offsetMs = this.audio.getScheduleOffsetMs();
+      const t = (delay: number, fn: () => void) => {
+        this.melodyTimers.push(setTimeout(fn, offsetMs + delay));
+      };
+
+      this.melodyCountdown.set(-1);
+      t(0,            () => this.melodyCountdown.set(3));
+      t(msBeat,       () => this.melodyCountdown.set(2));
+      t(2 * msBeat,   () => this.melodyCountdown.set(1));
+      t(3 * msBeat,   () => {
+        this.melodyCountdown.set(0); // GO!
+      });
+      t(4 * msBeat, () => {
+        this.melodyCountdown.set(-1);
+        this.startMelodyRecording(ex);
+      });
+    });
+  }
+
+  private startMelodyRecording(ex: MelodyExercise): void {
+    this.melodyPhase.set('recording');
+    this.melodyRecording.set(true);
+    this.melodyRecordingStart = Date.now();
+    this.melodyRecordedNotes = [];
+    this.melodyStep.set(0);
+    this.melodyPlayedNotes.set([]);
+
+    // Calcula duração total da melodia + margem de 50%
+    let totalMs = 0;
+    const gapMs = 80;
+    ex.notes.forEach(n => { totalMs += n.durationMs + gapMs; });
+    const recordingLimit = totalMs * 1.5;
+
+    this.melodyRecordingTimer = setTimeout(() => {
+      this.finishMelodyRecording();
+    }, recordingLimit);
+  }
+
+  /** Captura nota durante gravação de melodia */
+  tapMelodyNote(note: string): void {
+    const phase = this.melodyPhase();
+
+    // Exploração livre — apenas toca som, sem registro
+    if (phase === 'explore') return;
+
+    // Gravação ativa — registra nota com timestamp
+    if (phase === 'recording') {
+      const timeMs = Date.now() - this.melodyRecordingStart;
+      this.melodyRecordedNotes.push({ note, timeMs });
+      const played = [...this.melodyPlayedNotes(), note];
+      this.melodyPlayedNotes.set(played);
+      this.melodyStep.set(played.length);
+
+      const ex = this.currentExercise() as MelodyExercise;
+      if (played.length >= ex.notes.length) {
+        // Gravou todas as notas necessárias
+        if (this.melodyRecordingTimer) {
+          clearTimeout(this.melodyRecordingTimer);
+          this.melodyRecordingTimer = null;
+        }
+        setTimeout(() => this.finishMelodyRecording(), 300);
+      }
+      return;
+    }
+  }
+
+  private finishMelodyRecording(): void {
+    this.melodyRecording.set(false);
+    if (this.melodyRecordingTimer) {
+      clearTimeout(this.melodyRecordingTimer);
+      this.melodyRecordingTimer = null;
+    }
+
+    const ex = this.currentExercise() as MelodyExercise;
+    if (!ex || ex.type !== 'melody') return;
+
+    const score = this.evaluateMelodyScore(ex, this.melodyRecordedNotes);
+    this.melodyScore.set(score);
+    const passed = score >= 70;
+
+    this.finishExercise(passed, passed ? ex.xpReward : 0);
+  }
+
+  /**
+   * Avalia a execução da melodia gravada.
+   * Score = 60% precisão de notas + 40% precisão de tempo.
+   */
+  private evaluateMelodyScore(
+    ex: MelodyExercise,
+    recorded: { note: string; timeMs: number }[],
+  ): number {
+    const expected = ex.notes;
+    if (recorded.length === 0) return 0;
+
+    // -- Precisão de notas (60% do score) --
+    // Compara notas gravadas na mesma ordem
+    let noteHits = 0;
+    for (let i = 0; i < expected.length; i++) {
+      if (i < recorded.length && recorded[i].note === expected[i].note) {
+        noteHits++;
+      }
+    }
+    const noteAccuracy = noteHits / expected.length;
+
+    // -- Precisão de tempo (40% do score) --
+    // Para cada nota correta, calcula desvio relativo ao tempo esperado
+    const gapMs = 80;
+    const expectedTimes: number[] = [];
+    let cumMs = 0;
+    expected.forEach(n => {
+      expectedTimes.push(cumMs);
+      cumMs += n.durationMs + gapMs;
+    });
+
+    let timeScoreSum = 0;
+    let timeScoreCount = 0;
+    for (let i = 0; i < expected.length; i++) {
+      if (i < recorded.length && recorded[i].note === expected[i].note) {
+        const expectedTime = expectedTimes[i];
+        const actualTime = recorded[i].timeMs;
+        const deviation = Math.abs(actualTime - expectedTime);
+        const maxDeviation = expected[i].durationMs; // tolerância = duração da nota
+        const timeScore = Math.max(0, 1 - deviation / maxDeviation);
+        timeScoreSum += timeScore;
+        timeScoreCount++;
+      }
+    }
+    const timeAccuracy = timeScoreCount > 0 ? timeScoreSum / timeScoreCount : 0;
+
+    const finalScore = Math.round(noteAccuracy * 60 + timeAccuracy * 40);
+    return Math.min(100, Math.max(0, finalScore));
+  }
+
+  /** Volta da fase de explore para listen */
+  melodyBackToListen(): void {
+    this.melodyPhase.set('listen');
+    this.playCurrentExercise();
+  }
+
   startMelodyPlay(): void {
-    this.melodyPhase.set('play');
+    this.melodyPhase.set('explore');
     this.melodyStep.set(0);
     this.melodyPlayedNotes.set([]);
     this.melodyWrongNote.set(null);
-  }
-
-  tapMelodyNote(note: string): void {
-    const ex = this.currentExercise() as MelodyExercise;
-    if (!ex || ex.type !== 'melody' || this.melodyPhase() !== 'play') return;
-
-    const step = this.melodyStep();
-    const expected = ex.notes[step].note;
-
-    if (note === expected) {
-      const played = [...this.melodyPlayedNotes(), note];
-      this.melodyPlayedNotes.set(played);
-
-      if (played.length === ex.notes.length) {
-        // Melodia completa com acerto
-        this.finishExercise(true, ex.xpReward);
-      } else {
-        this.melodyStep.set(step + 1);
-      }
-    } else {
-      // Nota errada: pisca em vermelho e permite tentar novamente
-      this.melodyWrongNote.set(note);
-      setTimeout(() => this.melodyWrongNote.set(null), 500);
-    }
   }
 
   private clearMelodyTimers(): void {
@@ -694,7 +863,17 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.melodyPlayedNotes.set([]);
     this.melodyWrongNote.set(null);
     this.melodyPlayingNote.set(null);
+    this.melodyCountdown.set(-1);
+    this.melodyRecording.set(false);
+    this.melodyScore.set(null);
+    this.melodyRecordedNotes = [];
+    if (this.melodyRecordingTimer) {
+      clearTimeout(this.melodyRecordingTimer);
+      this.melodyRecordingTimer = null;
+    }
     this.clearMelodyTimers();
+    // Reinicia estado de note-id
+    this.noteIdExploring.set(true);
   }
 
   private noteDurationMs(note: string, msBeat: number): number {
@@ -704,5 +883,26 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private clearRhythmTimer(): void {
     this.rhythmTimers.forEach(id => clearTimeout(id));
     this.rhythmTimers = [];
+  }
+
+  /**
+   * Gera opções de notas para o exercício note-id.
+   * Inclui a resposta correta + 3 notas aleatórias diferentes (naturais, sem sustenidos).
+   */
+  private generateNoteOptions(correctNote: string): string[] {
+    const naturalNotes = ALL_KEYS
+      .filter(k => !k.isBlack)
+      .map(k => k.note);
+    const others = naturalNotes.filter(n => n !== correctNote);
+    // Shuffle e pega 3
+    const shuffled = others.sort(() => Math.random() - 0.5).slice(0, 3);
+    const options = [correctNote, ...shuffled];
+    // Shuffle final
+    return options.sort(() => Math.random() - 0.5);
+  }
+
+  /** Rótulo curto da nota para exibição nas alternativas */
+  noteLabel(note: string): string {
+    return note.replace(/\d/, '');
   }
 }
