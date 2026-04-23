@@ -1,0 +1,1 @@
+import"./chunk-7CGTOI24.js";var t=[{path:":moduleId",loadComponent:()=>import("./chunk-DU52FFJF.js").then(o=>o.PracticeComponent)},{path:"",redirectTo:"/home",pathMatch:"full"}];export{t as PRACTICE_ROUTES};
