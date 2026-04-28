@@ -21,6 +21,15 @@
         <div class="home__xp-hint">
           {{ i18n.t('home.xp.next', { xp: xpForNext() - xpInLevel() }) }}
         </div>
+        <app-primary-button
+          size="lg"
+          (clicked)="continuePractice()"
+          class="home__cta"
+          [ariaLabel]="i18n.t('home.cta')"
+        >
+          <mat-icon aria-hidden="true">play_arrow</mat-icon>
+          {{ i18n.t('home.cta') }}
+        </app-primary-button>
       </app-glass-panel>
 
       <!-- Daily Missions -->
@@ -63,19 +72,6 @@
           </div>
         </section>
       }
-
-      <!-- CTA -->
-      <div class="home__cta-row">
-        <app-primary-button
-          size="lg"
-          (clicked)="continuePractice()"
-          style="width: 100%"
-          [ariaLabel]="i18n.t('home.cta')"
-        >
-          <mat-icon aria-hidden="true">play_arrow</mat-icon>
-          {{ i18n.t('home.cta') }}
-        </app-primary-button>
-      </div>
 
       <!-- Modules list -->
       <section class="home__section">
