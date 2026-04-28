@@ -3,53 +3,72 @@
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding: 1rem;
+      padding: 1rem 1.1rem;
       border-radius: var(--radius-lg);
       background: var(--glass-bg);
       border: 1px solid var(--glass-border);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(16px) saturate(160%);
       cursor: pointer;
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      transition:
+        transform var(--transition-base),
+        box-shadow var(--transition-base),
+        border-color var(--transition-base),
+        background var(--transition-base);
       position: relative;
       overflow: hidden;
-      min-height: 72px;
+      min-height: 80px;
 
       &::before {
         content: '';
         position: absolute;
         left: 0; top: 0; bottom: 0;
         width: 4px;
-        background: var(--card-color);
+        background: linear-gradient(180deg,
+          var(--card-color) 0%,
+          color-mix(in srgb, var(--card-color) 60%, transparent) 100%);
         border-radius: 4px 0 0 4px;
+        box-shadow: 0 0 12px color-mix(in srgb, var(--card-color) 60%, transparent);
       }
 
       &:not(.module-card--locked):hover,
       &:not(.module-card--locked):focus-visible {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px color-mix(in srgb, var(--card-color) 20%, transparent);
+        transform: translateY(-3px);
+        background: var(--glass-bg-strong);
+        border-color: color-mix(in srgb, var(--card-color) 45%, var(--glass-border));
+        box-shadow:
+          0 14px 36px color-mix(in srgb, var(--card-color) 24%, transparent),
+          0 0 0 1px color-mix(in srgb, var(--card-color) 20%, transparent);
         outline: none;
       }
 
       &--locked {
-        opacity: 0.55;
+        opacity: 0.50;
         cursor: default;
+        filter: saturate(0.6);
       }
 
       &__icon-wrap {
         position: relative;
         flex-shrink: 0;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
+        width: 52px;
+        height: 52px;
+        border-radius: var(--radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: color-mix(in srgb, var(--card-color) 18%, transparent);
+        background: linear-gradient(135deg,
+          color-mix(in srgb, var(--card-color) 28%, transparent) 0%,
+          color-mix(in srgb, var(--card-color) 14%, transparent) 100%);
+        border: 1px solid color-mix(in srgb, var(--card-color) 35%, transparent);
+        box-shadow:
+          0 4px 14px color-mix(in srgb, var(--card-color) 25%, transparent),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15);
       }
 
       &__icon {
         color: var(--card-color);
-        font-size: 22px;
+        font-size: 26px;
+        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--card-color) 50%, transparent));
       }
 
       &__lock, &__check {
@@ -59,20 +78,24 @@
         font-size: 16px;
         background: var(--color-surface);
         border-radius: 50%;
+        padding: 2px;
       }
       &__lock { color: var(--color-on-surface-muted); }
-      &__check { color: #22c55e; }
+      &__check { color: var(--color-primary); }
 
       &__content {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
+        min-width: 0;
       }
 
       &__name {
-        font-weight: 600;
-        font-size: 0.95rem;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: -0.01em;
         color: var(--color-on-surface);
       }
 
@@ -83,13 +106,20 @@
       }
 
       &__status {
-        font-size: 0.72rem;
+        font-size: 0.74rem;
+        font-weight: 600;
         color: var(--color-on-surface-muted);
-        &--done { color: #22c55e; }
+        &--done { color: var(--color-primary); }
       }
 
       &__arrow {
         color: var(--color-on-surface-muted);
         flex-shrink: 0;
+        transition: transform var(--transition-base), color var(--transition-base);
+      }
+
+      &:not(.module-card--locked):hover &__arrow {
+        transform: translateX(4px);
+        color: var(--card-color);
       }
     }

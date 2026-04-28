@@ -68,17 +68,19 @@
       }
 
       &__title {
-        font-size: clamp(1.4rem, 5vw, 2rem);
-        font-weight: 700;
-        margin: 0 0 0.75rem;
+        font-family: var(--font-display);
+        font-size: clamp(1.5rem, 5.5vw, 2.15rem);
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        margin: 0 0 0.85rem;
         color: var(--color-on-surface);
-        line-height: 1.2;
+        line-height: 1.15;
       }
 
       &__desc {
-        font-size: 0.95rem;
+        font-size: 0.98rem;
         color: var(--color-on-surface-muted);
-        line-height: 1.6;
+        line-height: 1.65;
         margin: 0;
       }
 
@@ -94,16 +96,17 @@
         height: 8px;
         border-radius: 50%;
         border: none;
-        background: var(--glass-border);
+        background: var(--glass-border-strong);
         cursor: pointer;
         padding: 0;
-        transition: width 0.3s ease, background 0.3s ease;
+        transition: width 0.35s ease, background 0.3s ease, box-shadow 0.3s ease;
         min-height: 8px;
 
         &--active {
-          width: 24px;
+          width: 28px;
           border-radius: 4px;
-          background: var(--color-primary);
+          background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+          box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 60%, transparent);
         }
       }
 

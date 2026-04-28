@@ -2,29 +2,36 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  background: var(--color-bg);
+  height: 100%;
   color: var(--color-on-surface);
+  position: relative;
 
   &__content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
-    // allow route outlet children to fill height
     display: flex;
     flex-direction: column;
+    scroll-behavior: smooth;
   }
 
   &__bottom-nav {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    height: 64px;
+    height: 72px;
+    margin: 0 0.75rem 0.75rem;
+    padding: 0.4rem 0.4rem;
+    border-radius: var(--radius-full);
     background: var(--glass-bg-nav);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--glass-border);
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    padding-bottom: max(0.4rem, env(safe-area-inset-bottom, 0.4rem));
     position: sticky;
     bottom: 0;
     z-index: 100;
@@ -42,15 +49,32 @@
     background: none;
     border: none;
     cursor: pointer;
-    border-radius: 12px;
-    transition: color 0.2s ease;
+    border-radius: var(--radius-full);
+    transition:
+      color var(--transition-base),
+      background var(--transition-base),
+      transform var(--transition-fast);
     color: var(--color-on-surface-muted);
     position: relative;
     overflow: hidden;
     padding: 6px 4px;
 
+    &:hover {
+      color: var(--color-on-surface);
+    }
+
+    &:active {
+      transform: scale(0.94);
+    }
+
     &--active {
-      color: var(--color-primary);
+      color: #ffffff;
+      background: linear-gradient(135deg,
+        var(--color-primary) 0%,
+        var(--color-primary-light) 100%);
+      box-shadow:
+        0 6px 20px color-mix(in srgb, var(--color-primary) 50%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
 
       .app-shell__nav-icon {
         font-variation-settings: 'FILL' 1;
@@ -59,19 +83,20 @@
   }
 
   &__nav-icon {
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
-    transition: transform 0.2s ease;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    transition: transform var(--transition-base);
 
     .app-shell__nav-btn--active & {
-      transform: translateY(-1px);
+      transform: translateY(-1px) scale(1.05);
     }
   }
 
   &__nav-label {
-    font-size: 0.65rem;
-    font-weight: 500;
+    font-size: 0.66rem;
+    font-weight: 600;
     line-height: 1;
+    letter-spacing: 0.01em;
   }
 }
