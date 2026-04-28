@@ -27,7 +27,9 @@
           class="home__cta"
           [ariaLabel]="i18n.t('home.cta')"
         >
-          <mat-icon aria-hidden="true">play_arrow</mat-icon>
+          <svg class="home__cta-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5.14v13.72c0 .93 1.01 1.52 1.82 1.06l11.06-6.86c.78-.44.78-1.68 0-2.12L9.82 4.08C9.01 3.62 8 4.21 8 5.14z"/>
+          </svg>
           {{ i18n.t('home.cta') }}
         </app-primary-button>
       </app-glass-panel>
