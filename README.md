@@ -12,8 +12,10 @@ O **DuoMusic** é uma aplicação web educacional que ensina teoria musical de f
 
 1. [Visão Geral](#1-visão-geral)
 2. [Instalação](#2-instalação)
-3. [Contribuição](#3-contribuição)
-4. [Tecnologias](#4-tecnologias)
+3. [Executando o Backend](#3-executando-o-backend)
+4. [Executando o Frontend](#4-executando-o-frontend)
+5. [Contribuição](#5-contribuição)
+6. [Tecnologias](#6-tecnologias)
 
 ---
 
@@ -56,15 +58,97 @@ O aluno acumula **XP** ao acertar exercícios, sobe de **nível** a cada 100 XP,
 
 ### Pré-requisitos
 
-- [Node.js](https://nodejs.org/) 20 ou superior
-- npm 10 ou superior
+| Requisito | Versão mínima | Papel |
+|-----------|--------------|-------|
+| [Node.js](https://nodejs.org/) | 20 | Execução do frontend Angular |
+| npm | 10 | Gerenciador de pacotes do frontend |
+| [Python](https://www.python.org/) | 3.11 | Execução do backend FastAPI |
 
-### Passos
+### Clonando e instalando dependências do frontend
 
 ```bash
 git clone https://github.com/iagopedro/duomusic.git
 cd duomusic
 npm install
+```
+
+---
+
+## 3. Executando o Backend
+
+> ⚠️ **O backend deve ser iniciado antes do frontend.** O Angular consome a API REST em `http://localhost:8000`. Sem ela, a aplicação exibe a tela de modo offline.
+
+O backend usa **FastAPI + Uvicorn** com um ambiente virtual Python isolado em `backend/.venv`.
+
+### Pré-requisito: configurar o `.env`
+
+Copie o arquivo de exemplo e ajuste as variáveis conforme necessário:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+A configuração padrão funciona sem LLM habilitado (`DUOMUSIC_LLM_ENABLED=false`). Para habilitar respostas geradas por IA, defina `DUOMUSIC_LLM_API_KEY` com sua chave do provedor escolhido.
+
+### Criando o ambiente virtual (primeira vez)
+
+**Linux / macOS**
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Windows (PowerShell)**
+```powershell
+cd backend
+python -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+**Windows (Prompt de Comando)**
+```cmd
+cd backend
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+```
+
+### Iniciando o servidor
+
+**Linux / macOS**
+```bash
+# a partir do diretório backend/
+source .venv/bin/activate
+uvicorn app.main:app --reload
+```
+
+**Windows (PowerShell)**
+```powershell
+# a partir do diretório backend/
+.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload
+```
+
+**Windows (Prompt de Comando)**
+```cmd
+rem a partir do diretório backend/
+.venv\Scripts\activate.bat
+uvicorn app.main:app --reload
+```
+
+O servidor estará disponível em **http://localhost:8000**. Com `DUOMUSIC_DEBUG=true` no `.env`, a documentação interativa é acessível em http://localhost:8000/docs.
+
+---
+
+## 4. Executando o Frontend
+
+Com o backend em execução, abra outro terminal na raiz do projeto:
+
+```bash
 npm start
 ```
 
@@ -82,7 +166,7 @@ Acesse [http://localhost:4200](http://localhost:4200).
 
 ---
 
-## 3. Contribuição
+## 5. Contribuição
 
 Contribuições são bem-vindas. O fluxo resumido é:
 
@@ -95,7 +179,11 @@ Para instruções detalhadas sobre como adicionar **novos exercícios, módulos,
 
 ---
 
-## 4. Tecnologias
+## 6. Tecnologias
+
+| Tecnologia | Versão | Papel |
+|------------|--------|-------|
+**Frontend**
 
 | Tecnologia | Versão | Papel |
 |------------|--------|-------|
@@ -106,6 +194,17 @@ Para instruções detalhadas sobre como adicionar **novos exercícios, módulos,
 | [SCSS](https://sass-lang.com/) | — | Estilização com variáveis e BEM |
 | [Vitest](https://vitest.dev/) | 4.1.x | Test runner para testes unitários |
 | [gh-pages](https://www.npmjs.com/package/gh-pages) | 6.x | Publicação do build no GitHub Pages |
+
+**Backend**
+
+| Tecnologia | Versão | Papel |
+|------------|--------|-------|
+| [Python](https://www.python.org/) | 3.11+ | Linguagem do servidor |
+| [FastAPI](https://fastapi.tiangolo.com/) | 0.115+ | Framework da API REST |
+| [Uvicorn](https://www.uvicorn.org/) | 0.32+ | Servidor ASGI com hot-reload |
+| [Pydantic](https://docs.pydantic.dev/) | 2.x | Validação e serialização de dados |
+| [LangChain](https://python.langchain.com/) | 0.3+ | Integração com modelos de linguagem (opcional) |
+| [pytest](https://pytest.org/) | — | Testes unitários do backend |
 
 ---
 
