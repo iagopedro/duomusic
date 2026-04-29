@@ -28,17 +28,15 @@
       }
 
       &__level-badge {
-        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
-        color: #fff;
+        background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+        color: var(--color-primary-light);
         padding: 0.4rem 1rem;
         border-radius: var(--radius-full);
         font-family: var(--font-display);
         font-size: 0.85rem;
         font-weight: 700;
         letter-spacing: 0.01em;
-        box-shadow:
-          0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent),
-          inset 0 1px 0 rgba(255, 255, 255, 0.30);
+        border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
       }
 
       &__streak {
