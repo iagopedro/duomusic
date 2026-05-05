@@ -8,7 +8,8 @@
     "deploy": "ng build --base-href /duomusic/ && npx gh-pages -d dist/duomusic/browser",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:coverage": "ng test --coverage"
+    "test:coverage": "ng test --coverage",
+    "backend:start": "cd backend && .venv\\Scripts\\python.exe -m uvicorn app.main:app --reload"
   },
   "prettier": {
     "printWidth": 100,
