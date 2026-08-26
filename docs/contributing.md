@@ -13,7 +13,7 @@ Este guia descreve como estender o DuoMusic com novos conteúdos pedagógicos ou
 
 - **Código:** TypeScript estrito, componentes standalone, `ChangeDetectionStrategy.OnPush`
 - **Estilos:** SCSS com padrão BEM; usar variáveis CSS do tema global em `src/styles.scss`
-- **Commits:** mensagens claras e descritivas
+- **Commits:** seguir o padrão descrito em [commit-convention.md](commit-convention.md)
 - **Testes:** toda lógica nova deve ter cobertura de teste
 
 ## Adicionando conteúdo educacional
@@ -68,3 +68,4 @@ O `ProgressService` verificará automaticamente essa condição após cada exerc
 - [Modelos de dados](data-models.md)
 - [Serviços principais](services.md)
 - [Testes](testing.md)
+- [Convenção de commits](commit-convention.md)
