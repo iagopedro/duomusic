@@ -167,6 +167,34 @@ export const PT_BR = {
   'piano.tutorial.subtitle': 'Use o teclado do computador para tocar o piano virtual',
   'piano.tutorial.confirm': 'Entendi!',
   'piano.tutorial.help_btn': 'Ver atalhos do teclado',
+
+  // Authentication
+  'auth.email': 'Email',
+  'auth.password': 'Senha',
+  'auth.confirmPassword': 'Confirmar senha',
+  'auth.displayName': 'Nome de exibição',
+  'auth.optional': 'opcional',
+
+  'auth.login.title': 'Entrar',
+  'auth.login.subtitle': 'Bem-vindo de volta! Entre para continuar sua jornada musical.',
+  'auth.login.submit': 'Entrar',
+  'auth.login.noAccount': 'Não tem uma conta?',
+  'auth.login.registerLink': 'Cadastre-se',
+
+  'auth.register.title': 'Criar conta',
+  'auth.register.subtitle': 'Junte-se ao DuoMusic e comece sua jornada musical!',
+  'auth.register.submit': 'Criar conta',
+  'auth.register.hasAccount': 'Já tem uma conta?',
+  'auth.register.loginLink': 'Entrar',
+
+  'auth.logout': 'Sair',
+
+  // Validation
+  'validation.required': 'Este campo é obrigatório',
+  'validation.email': 'Digite um email válido',
+  'validation.minLength': 'Mínimo de {min} caracteres',
+  'validation.maxLength': 'Máximo de {max} caracteres',
+  'validation.passwordMismatch': 'As senhas não coincidem',
 } as const;
 
 export type I18nKey = keyof typeof PT_BR;
