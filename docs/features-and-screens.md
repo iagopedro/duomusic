@@ -1,5 +1,23 @@
 # Telas e Funcionalidades
 
+## Login (`/auth/login`)
+
+Formulário de autenticação com campos **email** e **senha**. Protegida pelo `guestGuard` (usuários já autenticados são redirecionados para `/home`).
+
+- Validação: email obrigatório e formato válido, senha obrigatória
+- Ao submeter, chama `AuthService.login()`; em caso de erro exibe a mensagem (`error` computed do `AuthService`)
+- Sucesso → navega para `/home`
+- Link para `/auth/register` para quem ainda não tem conta
+
+## Registro (`/auth/register`)
+
+Formulário de criação de conta com campos **email**, **senha**, **confirmação de senha** e **nome de exibição** (opcional). Também protegida pelo `guestGuard`.
+
+- Validação: email válido, senha entre 8 e 128 caracteres, confirmação deve coincidir com a senha, nome de exibição até 50 caracteres
+- Ao submeter, chama `AuthService.register()`; em caso de erro (ex.: e-mail duplicado, `409`) exibe a mensagem
+- Sucesso → navega para `/onboarding` (novo usuário ainda não passou pela introdução)
+- Link para `/auth/login` para quem já possui conta
+
 ## Onboarding (`/onboarding`)
 
 Apresentação em 3 passos para novos usuários. Ao concluir, registra `duomusic_onboarding_done = true` e navega para `/home`.
