@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from fastapi import APIRouter, Depends, Query
 
 from ..config import get_settings
@@ -7,7 +9,8 @@ from ..services.llm.provider import LLMExerciseGenerator, StaticExerciseGenerato
 router = APIRouter(prefix="/exercises", tags=["exercícios"])
 
 
-def get_exercise_service() -> ExerciseService:
+@lru_cache
+def _create_service() -> ExerciseService:
     settings = get_settings()
     generator = (
         LLMExerciseGenerator(settings) if settings.llm_enabled else StaticExerciseGenerator()
@@ -18,7 +21,7 @@ def get_exercise_service() -> ExerciseService:
 @router.get("")
 async def list_exercises(
     module_id: str | None = Query(None, alias="moduleId"),
-    service: ExerciseService = Depends(get_exercise_service),
+    service: ExerciseService = Depends(_create_service),
 ):
     """Retorna exercícios. Filtra por módulo se moduleId informado."""
     if module_id:
@@ -32,7 +35,7 @@ async def list_exercises(
 async def generate_exercises(
     module_id: str = Query(..., alias="moduleId"),
     count: int = Query(5, ge=1, le=20),
-    service: ExerciseService = Depends(get_exercise_service),
+    service: ExerciseService = Depends(_create_service),
 ):
     """Gera exercícios via LLM (ou fallback estático)."""
     exercises = await service.generate(module_id, count)
