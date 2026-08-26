@@ -6,5 +6,18 @@ langchain-core>=0.3.0
 langchain-google-genai>=4.0.0
 python-dotenv>=1.0.0
 
+# Database (SQLAlchemy async - agnóstico)
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+aiosqlite>=0.19.0
+asyncpg>=0.29.0
+greenlet>=3.0.0
+
+# Autenticação
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.9
+email-validator>=2.0.0
+
 # Para outros provedores LLM:
 # pip install langchain-openai        # OpenAI
