@@ -90,7 +90,7 @@
         transition: color var(--transition-base), transform var(--transition-base);
         &.done {
           color: var(--color-primary);
-          filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-primary) 55%, transparent));
+          filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-primary) 50%, transparent));
         }
       }
       &__mission-text {
