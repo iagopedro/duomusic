@@ -283,7 +283,12 @@ export class PracticeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     document.addEventListener('keydown', this.onKeydown);
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') as ModuleId;
-    const exerciseList = this.api.getExercisesForModule(this.moduleId);
+    this.loadExercises();
+  }
+
+  private async loadExercises(): Promise<void> {
+    // Tenta gerar exercícios via LLM (Gemini) com aleatoriedade
+    const exerciseList = await this.api.generateExercises(this.moduleId, 5);
     if (!exerciseList.length) {
       this.router.navigate(['/home']);
       return;

@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     llm_enabled: bool = False
     llm_provider: str = "gemini"
     llm_api_key: str = ""
-    llm_model: str = "gemini-2.0-flash"
+    llm_model: str = "gemini-3.6-flash"
     llm_temperature: float = 0.7
     llm_max_tokens: int = 2048
 

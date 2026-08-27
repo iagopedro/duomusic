@@ -50,6 +50,11 @@ function makeApiSpy() {
       if (!mod) return [];
       return EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
     }),
+    generateExercises: vi.fn().mockImplementation(async (moduleId: string) => {
+      const mod = MODULES.find(m => m.id === moduleId);
+      if (!mod) return [];
+      return EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
+    }),
   };
 }
 
