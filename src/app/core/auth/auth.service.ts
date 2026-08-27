@@ -40,8 +40,11 @@ export class AuthService {
     return state.status === 'error' ? state.error : null;
   });
 
+  /** Promise resolvida quando o estado inicial de autenticação é conhecido. Usada no APP_INITIALIZER para evitar que os guards rodem com o status 'idle'. */
+  readonly initialized: Promise<void>;
+
   constructor() {
-    this.initializeAuth();
+    this.initialized = this.initializeAuth();
   }
 
   /**

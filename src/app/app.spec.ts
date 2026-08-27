@@ -28,6 +28,13 @@ describe('App (root shell)', () => {
     expect(app.showNav()).toBe(false);
   });
 
+  it('showNav should be false on practice route', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    app.currentRoute.set('/practice/fundamentals');
+    expect(app.showNav()).toBe(false);
+  });
+
   it('showNav should be true on home route', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
@@ -50,8 +57,8 @@ describe('App (root shell)', () => {
     expect(app.theme()).toBe(settings.settings().darkTheme ? 'dark' : 'light');
   });
 
-  it('navItems should contain 4 entries', () => {
+  it('navItems should contain 3 entries', () => {
     const fixture = TestBed.createComponent(App);
-    expect(fixture.componentInstance.navItems.length).toBe(4);
+    expect(fixture.componentInstance.navItems.length).toBe(3);
   });
 });

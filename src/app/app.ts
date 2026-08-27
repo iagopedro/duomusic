@@ -73,7 +73,6 @@ export class App implements OnInit {
 
   readonly navItems: NavItem[] = [
     { route: '/home',         icon: 'home',           label: this.i18n.t('nav.home') },
-    { route: '/practice',     icon: 'sports_esports',  label: this.i18n.t('nav.practice') },
     { route: '/achievements', icon: 'emoji_events',   label: this.i18n.t('nav.achievements') },
     { route: '/profile',      icon: 'person',          label: this.i18n.t('nav.profile') },
   ];
@@ -81,7 +80,8 @@ export class App implements OnInit {
   readonly currentRoute = signal('');
   readonly showNav = computed(() =>
     !this.currentRoute().startsWith('/onboarding') &&
-    !this.currentRoute().startsWith('/offline')
+    !this.currentRoute().startsWith('/offline') &&
+    !this.currentRoute().startsWith('/practice')
   );
   readonly routeState = computed(() => this.currentRoute());
   readonly theme = computed(() => this.settings.settings().darkTheme ? 'dark' : 'light');
