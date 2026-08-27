@@ -641,6 +641,13 @@ describe('PracticeComponent — note-id free exploration', () => {
     expect(component.noteIdOptions().length).toBe(4);
   });
 
+  it('noteIdOptions should not have duplicate labels (e.g. C4 and C5 both showing "C")', async () => {
+    const { component } = await createNoteFixture();
+    if (component.currentExercise()?.type !== 'note-id') return;
+    const labels = component.noteIdOptions().map(n => component.noteLabel(n));
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
   it('noteLabel() should strip octave number', async () => {
     const { component } = await createFixture('fundamentals');
     expect(component.noteLabel('C4')).toBe('C');
