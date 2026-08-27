@@ -14,7 +14,7 @@
         background: none;
         border: none;
         color: rgba(255,255,255,0.65);
-        font-size: 0.9rem;
+        font-size: var(--text-sm);
         cursor: pointer;
         padding: 0.5rem;
         min-height: 44px;
@@ -48,8 +48,8 @@
       }
 
       &__emoji {
-        font-size: 7rem;
-        line-height: 1;
+        font-size: var(--text-5xl);
+        line-height: var(--leading-none);
         filter: drop-shadow(0 8px 32px rgba(0,0,0,0.3));
         animation: float 3s ease-in-out infinite;
       }
@@ -69,18 +69,18 @@
 
       &__title {
         font-family: var(--font-display);
-        font-size: clamp(1.5rem, 5.5vw, 2.15rem);
+        font-size: clamp(var(--text-xl), 5.5vw, var(--text-3xl));
         font-weight: 800;
-        letter-spacing: -0.025em;
+        letter-spacing: var(--tracking-tight);
         margin: 0 0 0.85rem;
         color: var(--color-on-surface);
-        line-height: 1.15;
+        line-height: var(--leading-tight);
       }
 
       &__desc {
-        font-size: 0.98rem;
+        font-size: var(--text-base);
         color: var(--color-on-surface-muted);
-        line-height: 1.65;
+        line-height: var(--leading-relaxed);
         margin: 0;
       }
 

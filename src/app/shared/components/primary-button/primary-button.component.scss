@@ -16,9 +16,9 @@
       border-radius: var(--radius-full, 999px);
       cursor: pointer;
       font-family: var(--font-display);
-      font-size: 1rem;
+      font-size: var(--text-base);
       font-weight: 700;
-      letter-spacing: 0.005em;
+      letter-spacing: var(--tracking-normal);
       transition:
         transform var(--transition-fast),
         box-shadow var(--transition-base),
@@ -95,6 +95,6 @@
         }
       }
 
-      &--sm { min-height: 42px; padding: 0 1.1rem; font-size: 0.875rem; }
-      &--lg { min-height: 60px; padding: 0 2.25rem; font-size: 1.1rem; }
+      &--sm { min-height: 42px; padding: 0 1.1rem; font-size: var(--text-sm); }
+      &--lg { min-height: 60px; padding: 0 2.25rem; font-size: var(--text-md); }
     }

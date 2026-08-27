@@ -33,7 +33,7 @@
   }
 
   &__title {
-    font-size: 1.3rem;
+    font-size: var(--text-lg);
     font-weight: 700;
     color: var(--color-on-surface, #fff);
     text-align: center;
@@ -68,7 +68,7 @@
   }
 
   &__subtitle {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
     color: var(--color-on-surface-muted, #aaa);
     text-align: center;
     margin: 0;
@@ -87,7 +87,7 @@
     padding: 0.3rem 0.5rem;
     border-radius: 6px;
     background: var(--glass-bg, rgba(255, 255, 255, 0.05));
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
 
     &--black {
       background: rgba(255, 255, 255, 0.08);
@@ -105,18 +105,18 @@
     background: rgba(255, 255, 255, 0.1);
     color: var(--color-primary, #6366f1);
     font-weight: 700;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     font-family: inherit;
   }
 
   &__arrow {
     color: var(--color-on-surface-muted, #aaa);
-    font-size: 0.7rem;
+    font-size: var(--text-xs);
   }
 
   &__note {
     color: var(--color-on-surface, #fff);
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
   }
 }

@@ -22,14 +22,14 @@
 }
 
 .auth-title {
-  font-size: 1.75rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--color-text);
   margin: 0 0 0.5rem;
 }
 
 .auth-subtitle {
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin: 0;
 }
@@ -46,7 +46,7 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 0.5rem;
   color: #ef4444;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   text-align: center;
 }
 
@@ -57,7 +57,7 @@
 }
 
 .form-field label {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text);
 }
@@ -70,7 +70,7 @@
 .form-field input {
   width: 100%;
   padding: 0.75rem 1rem;
-  font-size: 1rem;
+  font-size: var(--text-base);
   border: 2px solid var(--color-border);
   border-radius: 0.5rem;
   background: var(--color-bg);
@@ -103,7 +103,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.25rem;
+  font-size: var(--text-lg);
   padding: 0.25rem;
   opacity: 0.7;
   transition: opacity 0.2s;
@@ -114,14 +114,14 @@
 }
 
 .field-error {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: #ef4444;
 }
 
 .submit-button {
   width: 100%;
   padding: 0.875rem 1.5rem;
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
   color: white;
   background: var(--color-primary);
@@ -162,7 +162,7 @@
 .auth-footer {
   margin-top: 1.5rem;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
 
   a {
