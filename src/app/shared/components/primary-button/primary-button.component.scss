@@ -97,4 +97,62 @@
 
       &--sm { min-height: 42px; padding: 0 1.1rem; font-size: var(--text-sm); }
       &--lg { min-height: 60px; padding: 0 2.25rem; font-size: var(--text-md); }
+
+      // Onda de luz periódica — como um sinal sonoro percorrendo o botão a cada ciclo,
+      // convidando discretamente a continuar a jornada, sem distrair da leitura.
+      &--sweep {
+        animation: cta-border-glow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+        &:disabled { animation: none; }
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: -35%;
+          width: 30%;
+          background: linear-gradient(115deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.32) 45%,
+            rgba(255, 255, 255, 0.55) 50%,
+            rgba(255, 255, 255, 0.32) 55%,
+            transparent 100%);
+          transform: skewX(-18deg);
+          pointer-events: none;
+          animation: cta-wave 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+      }
+    }
+
+    @keyframes cta-wave {
+      0%, 15% { left: -35%; opacity: 0; }
+      18% { opacity: 1; }
+      40% { opacity: 1; }
+      45%, 100% { left: 130%; opacity: 0; }
+    }
+
+    // Contorno acende junto com a onda, como se a energia alcançasse as bordas do botão.
+    @keyframes cta-border-glow {
+      0%, 15%, 45%, 100% {
+        box-shadow:
+          0 8px 24px color-mix(in srgb, var(--color-primary) 45%, transparent),
+          inset 0 1px 0 rgba(255, 255, 255, 0.30),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+      }
+      18%, 42% {
+        box-shadow:
+          0 8px 26px color-mix(in srgb, var(--color-primary) 52%, transparent),
+          inset 0 1px 0 rgba(255, 255, 255, 0.30),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+          0 0 8px 1px color-mix(in srgb, var(--color-primary-light) 25%, transparent);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .primary-btn--sweep {
+        animation: none;
+
+        &::after { animation: none; }
+      }
     }
