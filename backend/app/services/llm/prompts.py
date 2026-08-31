@@ -3,6 +3,8 @@
 import random
 from datetime import datetime
 
+from ...utils.security import validate_module_id
+
 _EXERCISE_SCHEMA = """
 Tipos de exercício e seus campos obrigatórios (JSON com chaves em camelCase):
 
@@ -44,8 +46,22 @@ _MODULE_HINTS: dict[str, str] = {
 
 
 def build_exercise_prompt(module_id: str, count: int) -> str:
-    """Constrói o prompt para geração de exercícios via LLM."""
-    hint = _MODULE_HINTS.get(module_id, _MODULE_HINTS["mixed"])
+    """
+    Constrói o prompt para geração de exercícios via LLM.
+
+    Args:
+        module_id: ID do módulo (será validado contra whitelist).
+        count: Número de exercícios a gerar.
+
+    Returns:
+        Prompt formatado para o LLM.
+
+    Raises:
+        PromptInjectionError: Se module_id não for válido.
+    """
+    # Valida contra prompt injection antes de interpolar no prompt
+    safe_module_id = validate_module_id(module_id)
+    hint = _MODULE_HINTS.get(safe_module_id, _MODULE_HINTS["mixed"])
     
     # Seed aleatório para garantir exercícios únicos a cada chamada
     seed = random.randint(1000, 9999)
@@ -57,7 +73,7 @@ def build_exercise_prompt(module_id: str, count: int) -> str:
     bpm_range = random.choice(["60-80 (lento)", "80-100 (médio)", "100-120 (rápido)"])
 
     return f"""Você é um professor de teoria musical especializado em ear training.
-Gere exatamente {count} exercícios ÚNICOS e ALEATÓRIOS para o módulo "{module_id}" do aplicativo DuoMusic.
+Gere exatamente {count} exercícios ÚNICOS e ALEATÓRIOS para o módulo "{safe_module_id}" do aplicativo DuoMusic.
 
 ⚠️ ALEATORIEDADE OBRIGATÓRIA (seed={seed}, timestamp={timestamp}):
 - NUNCA repita exercícios anteriores — cada chamada deve gerar conteúdo completamente novo
