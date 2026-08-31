@@ -582,6 +582,10 @@ describe('PracticeComponent — computed helpers', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('PracticeComponent — note-id free exploration', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   async function createNoteFixture() {
     const result = await createFixture('fundamentals');
     const { component } = result;
@@ -665,6 +669,10 @@ describe('PracticeComponent — note-id free exploration', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('PracticeComponent — melody free exploration', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   async function createMelodyFixture() {
     const result = await createFixture('fundamentals');
     const { component } = result;
