@@ -20,21 +20,7 @@ Este documento descreve como fazer deploy do backend DuoMusic em provedores de c
 
 ---
 
-### 🚀 Alternativa 1: Railway (railway.app)
-
-**Por quê?**
-- Região São Paulo disponível (menor latência)
-- US$5 de crédito grátis/mês
-- Deploy muito simples
-- PostgreSQL incluído
-
-**Custos:**
-- Hobby: US$5/mês inclusos
-- Pro: US$20/mês + uso
-
----
-
-### 🌐 Alternativa 2: Fly.io (fly.io)
+### 🌐 Alternativa 1: Fly.io (fly.io)
 
 **Por quê?**
 - Região `gru` (São Paulo) disponível
@@ -60,9 +46,20 @@ Este documento descreve como fazer deploy do backend DuoMusic em provedores de c
 
 ---
 
+### 📅 Migração Futura Planejada: Locaweb
+
+**Por quê?** 100% brasileira, atendimento em português, pagamento em reais. Diferente do Render/Fly.io/Kinghost acima, a Locaweb opera como **IaaS** (Cloud/VPS) e não como PaaS: não há "Web Service" que builda o Dockerfile automaticamente a partir do GitHub — você provisiona uma VM e roda o container você mesmo.
+
+- **Locaweb Cloud**: VMs com recursos isolados, cobrança por hora (pay-as-you-go), API/Terraform — a partir de R$20/mês
+- **VPS Locaweb**: servidor virtualizado pré-configurado, cobrança mensal/trimestral fixa — a partir de R$15,90/mês
+
+Veja a seção ["Preparando a Migração Futura para Locaweb"](#preparando-a-migração-futura-para-locaweb) para o que muda em relação ao Render.
+
+---
+
 ## Monorepo: backend e frontend no mesmo repositório
 
-**Não é necessário criar um repositório separado.** O Render (e o Railway) têm suporte nativo a monorepos: cada serviço aponta para o mesmo repositório GitHub, mas define seu próprio **Root Directory** (pasta raiz). Só os arquivos dentro dessa pasta são usados no build/deploy daquele serviço.
+**Não é necessário criar um repositório separado.** O Render tem suporte nativo a monorepos: cada serviço aponta para o mesmo repositório GitHub, mas define seu próprio **Root Directory** (pasta raiz). Só os arquivos dentro dessa pasta são usados no build/deploy daquele serviço.
 
 - Serviço do **backend** → Root Directory: `backend`
 - Serviço do **frontend** → Root Directory: vazio/raiz (o projeto Angular já vive na raiz do repo)
@@ -163,45 +160,6 @@ export const environment = {
 
 ---
 
-## Deploy no Railway (Passo a Passo)
-
-### 1. Criar conta no Railway
-
-1. Acesse [railway.app](https://railway.app)
-2. Faça login com GitHub
-
-### 2. Criar Projeto
-
-1. Clique em **New Project**
-2. Selecione **Deploy from GitHub repo**
-3. Escolha o repositório `duomusic`
-
-### 3. Adicionar PostgreSQL
-
-1. No projeto, clique em **New** → **Database** → **PostgreSQL**
-2. O Railway cria automaticamente a variável `DATABASE_URL`
-
-### 4. Configurar Backend
-
-1. Clique no serviço do backend
-2. **Settings** → **Root Directory**: `backend` (Railway também suporta monorepo dessa forma — o frontend usaria outro serviço com Root Directory vazio)
-3. **Variables** → Adicione:
-
-```
-DUOMUSIC_DATABASE_URL=${{Postgres.DATABASE_URL}}
-DUOMUSIC_JWT_SECRET_KEY=<gerar-chave-segura>
-DUOMUSIC_DEBUG=false
-DUOMUSIC_CORS_ORIGINS=["https://seu-frontend.up.railway.app"]
-```
-
-> **Nota:** Railway usa `${{Postgres.DATABASE_URL}}` para referenciar variáveis de outros serviços.
-
-### 5. Deploy
-
-O Railway faz deploy automaticamente ao detectar o Dockerfile.
-
----
-
 ## Variáveis de Ambiente de Produção
 
 | Variável | Descrição | Exemplo |
@@ -240,7 +198,6 @@ Após o primeiro deploy, rode as migrations:
 
 ```bash
 # No Render: via Shell no dashboard
-# No Railway: via terminal do serviço
 
 alembic upgrade head
 ```
@@ -275,11 +232,58 @@ Ajuste `DUOMUSIC_RATE_LIMIT_MAX` e `DUOMUSIC_RATE_LIMIT_WINDOW` conforme necess�
 
 ## Custos Estimados (Mensal)
 
-| Componente | Render Free | Render Starter | Railway |
-|------------|-------------|----------------|---------|
-| Backend | US$0 | US$7 | ~US$5 |
-| PostgreSQL | US$0 (90 dias) | US$7 | Incluído |
-| Frontend | US$0 | US$0 | Incluído |
-| **Total** | **US$0** | **US$14** | **~US$5** |
+| Componente | Render Free | Render Starter |
+|------------|-------------|----------------|
+| Backend | US$0 | US$7 |
+| PostgreSQL | US$0 (90 dias) | US$7 |
+| Frontend | US$0 | US$0 |
+| **Total** | **US$0** | **US$14** |
 
 > **Nota:** O free tier do Render coloca o serviço em "sleep" após 15 minutos de inatividade. O primeiro request pode demorar ~30s para "acordar".
+
+---
+
+## Preparando a Migração Futura para Locaweb
+
+Esta seção documenta o que precisa mudar quando a aplicação for migrada do Render para a Locaweb. **Nenhuma ação é necessária agora** — é um guia de referência para quando a migração acontecer.
+
+### Diferença de modelo: PaaS (Render) vs. IaaS (Locaweb)
+
+| | Render (atual) | Locaweb (futuro) |
+|---|---|---|
+| Modelo | PaaS — builda o Dockerfile automaticamente a cada push | IaaS — você provisiona a VM e roda o Docker manualmente |
+| Build | Automático via GitHub | Manual (`docker build` / `docker compose up` na VM) |
+| SSL/HTTPS | Automático | Configurar Nginx + Certbot (Let's Encrypt) |
+| Proxy reverso | Gerenciado pelo Render | Você mesmo instala (Nginx/Traefik) |
+| Banco gerenciado | PostgreSQL managed incluso | Contratar banco gerenciado à parte, ou rodar em container na mesma VM |
+
+### O que já está pronto para a migração
+
+O [`backend/Dockerfile`](../backend/Dockerfile) já é **agnóstico de provedor** — não depende de nenhuma feature específica do Render:
+
+- Usa a variável `$PORT` (configurável, não fixa em 8000)
+- Roda como usuário não-root
+- Tem `HEALTHCHECK` embutido (útil para orquestração via `docker compose` ou watchdog)
+- `docker-entrypoint.sh` normaliza a `DATABASE_URL` para o driver `asyncpg`
+
+Ou seja, a mesma imagem Docker que roda no Render pode rodar em qualquer VM Linux com Docker instalado, sem alterações no Dockerfile.
+
+### Passos previstos para a migração
+
+1. **Provisionar a VM** (Locaweb Cloud ou VPS Locaweb), com Ubuntu/Debian recente e Docker + Docker Compose instalados
+2. **Clonar o repositório** na VM (ou configurar um pipeline de CI/CD que faça `git pull` + `docker build`)
+3. **Criar um `docker-compose.yml`** de produção na VM (não versionado neste guia ainda, pois depende da topologia final — ex: se o PostgreSQL vai rodar em container ou será um serviço gerenciado à parte)
+4. **Configurar reverse proxy** (Nginx ou Traefik) na frente do container para:
+   - Terminar SSL/TLS (via Certbot/Let's Encrypt)
+   - Rotear `api.duomusic.com.br` → container do backend na porta interna
+5. **Migrar o banco de dados**: `pg_dump` do PostgreSQL do Render → `pg_restore` no banco de destino (gerenciado pela Locaweb ou em container)
+6. **Atualizar variáveis de ambiente**: `DUOMUSIC_DATABASE_URL`, `DUOMUSIC_CORS_ORIGINS` (novo domínio), `DUOMUSIC_JWT_SECRET_KEY` (manter a mesma para não invalidar tokens existentes, se a migração for feita sem downtime)
+7. **Atualizar o frontend**: `src/environments/environment.production.ts` com a nova URL da API e rebuild
+8. **Trocar o DNS** do domínio da API para apontar para o novo IP/VM, com um período de transição se possível
+
+### O que pedir ao Copilot quando a migração for iniciada
+
+Quando decidir seguir com a migração, peça para gerar:
+- Um `docker-compose.yml` de produção (backend + Nginx + Certbot, e opcionalmente PostgreSQL)
+- Um arquivo de configuração do Nginx com proxy reverso e redirecionamento HTTPS
+- Um script de deploy (`git pull && docker compose up -d --build`) para rodar na VM
