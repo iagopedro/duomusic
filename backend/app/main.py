@@ -104,6 +104,7 @@ app.include_router(modules.router, prefix="/api")
 app.include_router(achievements.router, prefix="/api")
 
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
+    """Health check endpoint para provedores de cloud."""
     return {"status": "ok"}
