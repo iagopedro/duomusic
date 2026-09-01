@@ -28,9 +28,36 @@ html {
   --color-danger:   #ef4444;
   --color-info:     #38bdf8;
 
-  // Typography
+  // Typography — fonts
   --font-display: 'Poppins', 'Roboto', system-ui, -apple-system, sans-serif;
   --font-body:    'Poppins', 'Roboto', system-ui, sans-serif;
+
+  // Typography — scale (Major Third 1.25)
+  --text-2xs:   0.625rem;   // 10px — keyboard hints only
+  --text-xs:    0.75rem;    // 12px — labels, captions
+  --text-sm:    0.875rem;   // 14px — secondary text
+  --text-base:  1rem;       // 16px — body, buttons
+  --text-md:    1.125rem;   // 18px — emphasis
+  --text-lg:    1.25rem;    // 20px — subtitles
+  --text-xl:    1.5rem;     // 24px — section titles
+  --text-2xl:   1.875rem;   // 30px — page titles
+  --text-3xl:   2.25rem;    // 36px — hero
+  --text-4xl:   3rem;       // 48px — big numbers
+  --text-5xl:   4rem;       // 64px — decorative
+
+  // Typography — line-heights
+  --leading-none:    1;
+  --leading-tight:   1.15;
+  --leading-snug:    1.3;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  // Typography — letter-spacing
+  --tracking-tighter: -0.03em;
+  --tracking-tight:   -0.02em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.05em;
+  --tracking-wider:   0.1em;
 
   // Radii
   --radius-sm:   8px;

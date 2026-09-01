@@ -138,9 +138,11 @@ class TestExercisesListEndpoint:
         assert len(exercicios) > 0
         assert all(e["moduleId"] == "intervals" for e in exercicios)
 
-    def test_filter_modulo_inexistente_retorna_vazio(self, cliente):
+    def test_filter_modulo_inexistente_retorna_400(self, cliente):
+        """Módulo inválido retorna 400 (proteção contra prompt injection)."""
         resp = cliente.get("/api/exercises?moduleId=nao-existe")
-        assert resp.json() == []
+        assert resp.status_code == 400
+        assert "não é um módulo válido" in resp.json()["detail"]
 
     def test_campo_module_id_em_camel_case(self, cliente):
         exercicio = cliente.get("/api/exercises").json()[0]
@@ -202,10 +204,11 @@ class TestExercisesGenerateEndpoint:
         exercicios = resp.json()
         assert all(e["moduleId"] == "chords" for e in exercicios)
 
-    def test_modulo_inexistente_retorna_lista_vazia(self, cliente):
+    def test_modulo_inexistente_retorna_400(self, cliente):
+        """Módulo inválido retorna 400 (proteção contra prompt injection)."""
         resp = cliente.post("/api/exercises/generate?moduleId=modulo-fantasma&count=5")
-        assert resp.status_code == 200
-        assert resp.json() == []
+        assert resp.status_code == 400
+        assert "não é um módulo válido" in resp.json()["detail"]
 
 
 class TestRateLimiting:

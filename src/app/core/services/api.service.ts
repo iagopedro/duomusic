@@ -40,4 +40,21 @@ export class ApiService {
     if (!mod) return [];
     return this._exercises().filter(e => mod.exerciseIds.includes(e.id));
   }
+
+  /** Gera exercícios via LLM (Gemini) com aleatoriedade. Fallback para estáticos se falhar. */
+  async generateExercises(moduleId: string, count: number = 5): Promise<Exercise[]> {
+    try {
+      const exercises = await firstValueFrom(
+        this.http.post<Exercise[]>(
+          `${environment.apiUrl}/exercises/generate`,
+          null,
+          { params: { moduleId, count: count.toString() } }
+        )
+      );
+      return exercises;
+    } catch {
+      // Fallback para exercícios estáticos se LLM falhar
+      return this.getExercisesForModule(moduleId);
+    }
+  }
 }

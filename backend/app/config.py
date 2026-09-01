@@ -13,11 +13,20 @@ class Settings(BaseSettings):
     debug: bool = False
     cors_origins: list[str] = ["http://localhost:4200"]
 
+    # Database — URL async (aiosqlite para SQLite, asyncpg para PostgreSQL)
+    database_url: str = "sqlite+aiosqlite:///./duomusic.db"
+
+    # JWT
+    jwt_secret_key: str = "dev-secret-change-in-production-at-least-32-chars"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
+
     # LLM
     llm_enabled: bool = False
     llm_provider: str = "gemini"
     llm_api_key: str = ""
-    llm_model: str = "gemini-2.0-flash"
+    llm_model: str = "gemini-3.6-flash"
     llm_temperature: float = 0.7
     llm_max_tokens: int = 2048
 

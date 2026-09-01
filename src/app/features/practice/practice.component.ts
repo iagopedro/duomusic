@@ -283,7 +283,12 @@ export class PracticeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     document.addEventListener('keydown', this.onKeydown);
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') as ModuleId;
-    const exerciseList = this.api.getExercisesForModule(this.moduleId);
+    this.loadExercises();
+  }
+
+  private async loadExercises(): Promise<void> {
+    // Tenta gerar exercícios via LLM (Gemini) com aleatoriedade
+    const exerciseList = await this.api.generateExercises(this.moduleId, 5);
     if (!exerciseList.length) {
       this.router.navigate(['/home']);
       return;
@@ -888,15 +893,27 @@ export class PracticeComponent implements OnInit, OnDestroy {
   /**
    * Gera opções de notas para o exercício note-id.
    * Inclui a resposta correta + 3 notas aleatórias diferentes (naturais, sem sustenidos).
+   * ALL_KEYS contém C4 e C5 (mesmo rótulo "C"), então a exclusão e a deduplicação
+   * são feitas pelo rótulo (nome da nota sem oitava), não pela string completa.
    */
   private generateNoteOptions(correctNote: string): string[] {
+    const correctLabel = this.noteLabel(correctNote);
     const naturalNotes = ALL_KEYS
       .filter(k => !k.isBlack)
-      .map(k => k.note);
-    const others = naturalNotes.filter(n => n !== correctNote);
-    // Shuffle e pega 3
-    const shuffled = others.sort(() => Math.random() - 0.5).slice(0, 3);
-    const options = [correctNote, ...shuffled];
+      .map(k => k.note)
+      .sort(() => Math.random() - 0.5);
+
+    const usedLabels = new Set<string>([correctLabel]);
+    const others: string[] = [];
+    for (const note of naturalNotes) {
+      const label = this.noteLabel(note);
+      if (usedLabels.has(label)) continue;
+      usedLabels.add(label);
+      others.push(note);
+      if (others.length === 3) break;
+    }
+
+    const options = [correctNote, ...others];
     // Shuffle final
     return options.sort(() => Math.random() - 0.5);
   }

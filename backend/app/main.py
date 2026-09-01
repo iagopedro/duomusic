@@ -2,13 +2,17 @@ import logging
 import logging.config
 import time
 from collections import defaultdict
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import get_settings
+from .database import close_db, init_db
 from .routers import achievements, exercises, modules
+from .routers.auth import router as auth_router
+from .routers.user_progress import router as user_progress_router
 
 settings = get_settings()
 
@@ -29,20 +33,34 @@ logging.config.dictConfig({
     "root": {"level": "INFO", "handlers": ["console"]},
 })
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Gerencia o ciclo de vida da aplicação."""
+    # Startup: inicializa o banco de dados
+    await init_db()
+    logging.info("Database initialized")
+    yield
+    # Shutdown: fecha conexões
+    await close_db()
+    logging.info("Database connections closed")
+
+
 app = FastAPI(
     title="DuoMusic API",
     version="1.0.0",
     docs_url="/docs" if settings.debug else None,
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # ── Rate limiter em memória ──────────────────────────────────────────────────
@@ -79,11 +97,14 @@ async def security_headers(request: Request, call_next):
 
 
 # ── Routers ──────────────────────────────────────────────────────────────────
+app.include_router(auth_router, prefix="/api")
+app.include_router(user_progress_router, prefix="/api")
 app.include_router(exercises.router, prefix="/api")
 app.include_router(modules.router, prefix="/api")
 app.include_router(achievements.router, prefix="/api")
 
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
+    """Health check endpoint para provedores de cloud."""
     return {"status": "ok"}

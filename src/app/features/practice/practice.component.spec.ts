@@ -50,6 +50,11 @@ function makeApiSpy() {
       if (!mod) return [];
       return EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
     }),
+    generateExercises: vi.fn().mockImplementation(async (moduleId: string) => {
+      const mod = MODULES.find(m => m.id === moduleId);
+      if (!mod) return [];
+      return EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
+    }),
   };
 }
 
@@ -577,6 +582,10 @@ describe('PracticeComponent — computed helpers', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('PracticeComponent — note-id free exploration', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   async function createNoteFixture() {
     const result = await createFixture('fundamentals');
     const { component } = result;
@@ -641,6 +650,13 @@ describe('PracticeComponent — note-id free exploration', () => {
     expect(component.noteIdOptions().length).toBe(4);
   });
 
+  it('noteIdOptions should not have duplicate labels (e.g. C4 and C5 both showing "C")', async () => {
+    const { component } = await createNoteFixture();
+    if (component.currentExercise()?.type !== 'note-id') return;
+    const labels = component.noteIdOptions().map(n => component.noteLabel(n));
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
   it('noteLabel() should strip octave number', async () => {
     const { component } = await createFixture('fundamentals');
     expect(component.noteLabel('C4')).toBe('C');
@@ -653,6 +669,10 @@ describe('PracticeComponent — note-id free exploration', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('PracticeComponent — melody free exploration', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   async function createMelodyFixture() {
     const result = await createFixture('fundamentals');
     const { component } = result;

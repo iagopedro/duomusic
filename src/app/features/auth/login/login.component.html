@@ -1,0 +1,73 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">{{ i18n.t('auth.login.title') }}</h1>
+      <p class="auth-subtitle">{{ i18n.t('auth.login.subtitle') }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+      @if (error()) {
+        <div class="error-banner">
+          {{ error() }}
+        </div>
+      }
+
+      <div class="form-field">
+        <label for="email">{{ i18n.t('auth.email') }}</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          autocomplete="email"
+          [class.invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+        />
+        @if (getErrorMessage('email')) {
+          <span class="field-error">{{ getErrorMessage('email') }}</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">{{ i18n.t('auth.password') }}</label>
+        <div class="password-input">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            autocomplete="current-password"
+            [class.invalid]="form.get('password')?.invalid && form.get('password')?.touched"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+          >
+            {{ showPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        @if (getErrorMessage('password')) {
+          <span class="field-error">{{ getErrorMessage('password') }}</span>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="submit-button"
+        [disabled]="isLoading() || form.invalid"
+      >
+        @if (isLoading()) {
+          <span class="spinner"></span>
+        } @else {
+          {{ i18n.t('auth.login.submit') }}
+        }
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>
+        {{ i18n.t('auth.login.noAccount') }}
+        <a routerLink="/auth/register">{{ i18n.t('auth.login.registerLink') }}</a>
+      </p>
+    </div>
+  </div>
+</div>

@@ -21,6 +21,10 @@ O **DuoMusic** é uma aplicação web educacional que ensina teoria musical de f
 
 ## 1. Visão Geral
 
+### Autenticação
+
+O DuoMusic possui **contas de usuário** com login e registro (email/senha). O progresso é sincronizado entre dispositivos via backend (JWT com access + refresh token), mas continua funcionando com uma cópia local em `localStorage` mesmo offline.
+
 ### Pilares pedagógicos
 
 | Pilar | Como o DuoMusic aplica |
@@ -89,6 +93,8 @@ cp backend/.env.example backend/.env
 ```
 
 A configuração padrão funciona sem LLM habilitado (`DUOMUSIC_LLM_ENABLED=false`). Para habilitar respostas geradas por IA, defina `DUOMUSIC_LLM_API_KEY` com sua chave do provedor escolhido.
+
+> ⚠️ **Autenticação**: por padrão o backend usa um `DUOMUSIC_JWT_SECRET_KEY` de desenvolvimento e um banco **SQLite** local (`duomusic.db`, criado automaticamente). Em produção, defina `DUOMUSIC_JWT_SECRET_KEY` com um segredo forte e `DUOMUSIC_DATABASE_URL` apontando para um PostgreSQL (`postgresql+asyncpg://user:pass@host/db`).
 
 ### Criando o ambiente virtual (primeira vez)
 
@@ -203,6 +209,10 @@ Para instruções detalhadas sobre como adicionar **novos exercícios, módulos,
 | [FastAPI](https://fastapi.tiangolo.com/) | 0.115+ | Framework da API REST |
 | [Uvicorn](https://www.uvicorn.org/) | 0.32+ | Servidor ASGI com hot-reload |
 | [Pydantic](https://docs.pydantic.dev/) | 2.x | Validação e serialização de dados |
+| [SQLAlchemy](https://www.sqlalchemy.org/) | 2.x (async) | ORM agnóstico de banco (SQLite/PostgreSQL) |
+| [python-jose](https://python-jose.readthedocs.io/) | 3.x | Criação e validação de tokens JWT |
+| [passlib](https://passlib.readthedocs.io/) | 1.7.x | Hash de senhas (bcrypt) |
+| [aiosqlite](https://github.com/omnilib/aiosqlite) / [asyncpg](https://magicstack.github.io/asyncpg/) | — | Drivers assíncronos SQLite (dev) / PostgreSQL (prod) |
 | [LangChain](https://python.langchain.com/) | 0.3+ | Integração com modelos de linguagem (opcional) |
 | [pytest](https://pytest.org/) | — | Testes unitários do backend |
 

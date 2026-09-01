@@ -1,0 +1,114 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">{{ i18n.t('auth.register.title') }}</h1>
+      <p class="auth-subtitle">{{ i18n.t('auth.register.subtitle') }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+      @if (error()) {
+        <div class="error-banner">
+          {{ error() }}
+        </div>
+      }
+
+      <div class="form-field">
+        <label for="email">{{ i18n.t('auth.email') }}</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          autocomplete="email"
+          [class.invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+        />
+        @if (getErrorMessage('email')) {
+          <span class="field-error">{{ getErrorMessage('email') }}</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="displayName">{{ i18n.t('auth.displayName') }} <span class="optional">({{ i18n.t('auth.optional') }})</span></label>
+        <input
+          type="text"
+          id="displayName"
+          formControlName="displayName"
+          autocomplete="name"
+          [class.invalid]="form.get('displayName')?.invalid && form.get('displayName')?.touched"
+        />
+        @if (getErrorMessage('displayName')) {
+          <span class="field-error">{{ getErrorMessage('displayName') }}</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">{{ i18n.t('auth.password') }}</label>
+        <div class="password-input">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            autocomplete="new-password"
+            [class.invalid]="form.get('password')?.invalid && form.get('password')?.touched"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+          >
+            {{ showPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        @if (getErrorMessage('password')) {
+          <span class="field-error">{{ getErrorMessage('password') }}</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="confirmPassword">{{ i18n.t('auth.confirmPassword') }}</label>
+        <div class="password-input">
+          <input
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            id="confirmPassword"
+            formControlName="confirmPassword"
+            autocomplete="new-password"
+            [class.invalid]="(form.get('confirmPassword')?.invalid || form.errors?.['passwordMismatch']) && form.get('confirmPassword')?.touched"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="toggleConfirmPasswordVisibility()"
+            [attr.aria-label]="showConfirmPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+          >
+            {{ showConfirmPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        @if (getErrorMessage('confirmPassword')) {
+          <span class="field-error">{{ getErrorMessage('confirmPassword') }}</span>
+        }
+        @if (getPasswordMatchError()) {
+          <span class="field-error">{{ getPasswordMatchError() }}</span>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="submit-button"
+        [disabled]="isLoading() || form.invalid"
+      >
+        @if (isLoading()) {
+          <span class="spinner"></span>
+        } @else {
+          {{ i18n.t('auth.register.submit') }}
+        }
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>
+        {{ i18n.t('auth.register.hasAccount') }}
+        <a routerLink="/auth/login">{{ i18n.t('auth.register.loginLink') }}</a>
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+# Database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Alembic
+alembic/versions/__pycache__/

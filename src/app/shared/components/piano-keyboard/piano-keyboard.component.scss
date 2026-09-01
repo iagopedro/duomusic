@@ -142,7 +142,7 @@
   }
 
   &__black-key-hint {
-    font-size: 0.5rem;
+    font-size: var(--text-2xs);
     font-weight: 700;
     color: rgba(255, 255, 255, 0.8);
     user-select: none;
@@ -154,7 +154,7 @@
     top: 6px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 0.6rem;
+    font-size: var(--text-2xs);
     font-weight: 700;
     color: var(--color-primary, #6366f1);
     background: rgba(255, 255, 255, 0.85);
@@ -162,11 +162,11 @@
     padding: 1px 4px;
     user-select: none;
     pointer-events: none;
-    line-height: 1.2;
+    line-height: var(--leading-tight);
   }
 
   &__key-label {
-    font-size: 0.75rem;
+    font-size: var(--text-sm);
     font-weight: 700;
     color: #555;
     user-select: none;

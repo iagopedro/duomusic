@@ -18,5 +18,7 @@ export class PrimaryButtonComponent {
   readonly size = input<'sm' | 'md' | 'lg'>('md');
   readonly disabled = input(false);
   readonly ariaLabel = input<string | undefined>(undefined);
+  /** Onda de luz periódica e discreta, para chamar atenção sem ser intrusivo (ex: CTA principal). */
+  readonly sweep = input(false);
   readonly clicked = output<MouseEvent>();
 }

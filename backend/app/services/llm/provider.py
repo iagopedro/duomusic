@@ -77,6 +77,16 @@ class LLMExerciseGenerator(ExerciseGenerator):
         try:
             response = await self._llm.ainvoke(prompt)
             raw = response.content
+            # Handle both string and list responses (newer Gemini models return list of parts)
+            if isinstance(raw, list):
+                # Extract text from list of content parts: [{'type': 'text', 'text': '...'}]
+                text_parts = []
+                for part in raw:
+                    if isinstance(part, dict) and "text" in part:
+                        text_parts.append(part["text"])
+                    elif isinstance(part, str):
+                        text_parts.append(part)
+                raw = "".join(text_parts)
             # Remove code fences que o Gemini costuma incluir (```json ... ```)
             clean = re.sub(r"^```(?:json)?\s*", "", raw.strip(), flags=re.MULTILINE)
             clean = re.sub(r"```\s*$", "", clean.strip(), flags=re.MULTILINE).strip()
@@ -92,7 +102,7 @@ class LLMExerciseGenerator(ExerciseGenerator):
                 "LLM retornou JSON inválido para módulo '%s': %s. Conteúdo bruto: %r",
                 module_id,
                 exc,
-                response.content[:200],
+                str(response.content)[:200] if response else "N/A",
             )
             return await self._fallback.get_by_module(module_id)
         except Exception:

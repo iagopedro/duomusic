@@ -1,5 +1,7 @@
 """Testes para os templates de prompt do LLM."""
 
+import pytest
+
 from app.services.llm.prompts import build_exercise_prompt
 
 
@@ -43,12 +45,12 @@ class TestBuildExercisePrompt:
         prompt = build_exercise_prompt("mixed", 5)
         assert "mixed" in prompt or "Misture" in prompt
 
-    def test_modulo_desconhecido_usa_hint_mixed(self):
-        """Módulo não mapeado deve usar o hint de 'mixed' como fallback."""
-        prompt_desconhecido = build_exercise_prompt("modulo-nao-existe", 5)
-        prompt_mixed = build_exercise_prompt("mixed", 5)
-        # Ambos devem conter o mesmo hint de fallback
-        assert "Misture" in prompt_desconhecido or "mixed" in prompt_desconhecido.lower()
+    def test_modulo_desconhecido_lanca_prompt_injection_error(self):
+        """Módulo não mapeado deve lançar PromptInjectionError (segurança contra prompt injection)."""
+        from app.utils.security import PromptInjectionError
+
+        with pytest.raises(PromptInjectionError, match="não é um módulo válido"):
+            build_exercise_prompt("modulo-nao-existe", 5)
 
     def test_prompt_contem_instrucao_json_puro(self):
         prompt = build_exercise_prompt("fundamentals", 5)
