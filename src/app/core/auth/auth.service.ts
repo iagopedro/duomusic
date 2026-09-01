@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { StorageService } from '../storage/storage.service';
 import {
   AuthState,
@@ -13,7 +14,7 @@ import {
 } from './auth.models';
 
 const TOKENS_KEY = 'duomusic_tokens';
-const API_URL = 'http://localhost:8000/api';
+const API_URL = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
