@@ -1,0 +1,69 @@
+# Render Blueprint — Deploy automático
+# https://render.com/docs/blueprint-spec
+# Monorepo: cada serviço usa rootDir para isolar build/deploy do backend e do frontend.
+# https://render.com/docs/monorepo-support
+
+services:
+  # ── Backend API ────────────────────────────────────────────────────────────
+  - type: web
+    name: duomusic-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: oregon
+    plan: free
+    healthCheckPath: /api/health
+    # Só faz redeploy se algo em backend/ mudar
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      - key: DUOMUSIC_DATABASE_URL
+        fromDatabase:
+          name: duomusic-db
+          property: connectionString
+        # Nota: Render fornece postgresql://, mas precisamos de postgresql+asyncpg://
+        # Ajuste manualmente no dashboard ou use um script de startup
+      - key: DUOMUSIC_JWT_SECRET_KEY
+        generateValue: true
+      - key: DUOMUSIC_DEBUG
+        value: "false"
+      - key: DUOMUSIC_CORS_ORIGINS
+        sync: false  # Configurar manualmente após deploy do frontend
+      - key: DUOMUSIC_LLM_ENABLED
+        value: "false"
+
+  # ── Frontend (Static Site) ─────────────────────────────────────────────────
+  - type: web
+    name: duomusic-app
+    runtime: static
+    # rootDir omitido: projeto Angular vive na raiz do repositório
+    buildCommand: npm install && npm run build -- --configuration=production
+    staticPublishPath: ./dist/duomusic/browser
+    region: oregon
+    plan: free
+    # Só faz redeploy se algo fora de backend/docs mudar
+    buildFilter:
+      ignoredPaths:
+        - backend/**
+        - docs/**
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# ── Database ───────────────────────────────────────────────────────────────
+databases:
+  - name: duomusic-db
+    databaseName: duomusic
+    user: duomusic_user
+    region: oregon
+    plan: free
