@@ -127,34 +127,28 @@ Execute localmente para gerar uma chave segura:
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-### 5. Deploy do Frontend (Static Site)
+### 5. Deploy do Frontend (GitHub Pages)
 
-1. Dashboard → **New** → **Static Site**
-2. Conecte o repositório
-3. Configure:
-   - Name: `duomusic-app`
-   - Branch: `main`
-   - Build Command: `npm install && npm run build -- --configuration=production`
-   - Publish Directory: `dist/duomusic/browser`
+O frontend é publicado pelo GitHub Pages usando o workflow [`deploy.yml`](../.github/workflows/deploy.yml). O Render hospeda somente o backend e o PostgreSQL.
 
-4. **Environment Variables**:
-   - Não são necessárias (a URL da API está no build)
-
-5. **Antes do deploy**, atualize `src/environments/environment.production.ts`:
+1. Antes do deploy, confirme a URL da API em `src/environments/environment.production.ts`:
 
 ```typescript
 export const environment = {
-  apiUrl: 'https://duomusic-api.onrender.com/api',
+   apiUrl: 'https://duomusic.onrender.com/api',
 };
 ```
 
-> O Root Directory do frontend deve ficar **vazio** (raiz do repo) — não configure `backend` aqui.
+2. Em GitHub → **Settings** → **Pages**, configure **Source** como **GitHub Actions**.
+3. Faça merge ou push para a branch `main`. O workflow instala as dependências, executa o build com `--base-href /duomusic/` e publica `dist/duomusic/browser` automaticamente.
+
+> A branch `gh-pages` não é usada pelo workflow atual. Ela não deve ser configurada como origem do GitHub Pages nem receber código-fonte manualmente.
 
 ### Deploy via Blueprint (alternativa recomendada)
 
 1. Dashboard → **New** → **Blueprint**
 2. Conecte o repositório GitHub
-3. O Render detecta o `render.yaml` na raiz e propõe criar os serviços `duomusic-api`, `duomusic-app` e o banco `duomusic-db` automaticamente, cada um já com o `rootDir` correto
+3. O Render detecta o `render.yaml` na raiz e propõe criar o serviço `duomusic-api` e o banco `duomusic-db` automaticamente, com o `rootDir` correto
 4. Revise as variáveis marcadas como `sync: false` (ex: `DUOMUSIC_CORS_ORIGINS`) e preencha manualmente após o primeiro deploy
 5. Clique em **Apply**
 
