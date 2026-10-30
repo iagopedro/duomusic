@@ -1,7 +1,17 @@
 import {
-  Component, ChangeDetectionStrategy, signal, computed, OnInit, OnDestroy, inject,
+  Component,
+  ChangeDetectionStrategy,
+  signal,
+  computed,
+  OnInit,
+  OnDestroy,
+  inject,
+  effect,
+  viewChild,
+  ElementRef,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
 import { MatIconModule } from '@angular/material/icon';
 import { trigger, transition, style, animate } from '@angular/animations';
 
@@ -11,32 +21,67 @@ import { BackgroundTrackService } from '../../core/services/background-track.ser
 import { ProgressService } from '../../core/services/progress.service';
 import { ApiService } from '../../core/services/api.service';
 import { StorageService } from '../../core/storage/storage.service';
+import { JourneyLesson, JourneyService } from '../../core/services/journey.service';
+import { MODULE_CONCEPTS, PracticeMode, theoryForModule } from '../../data/journey.data';
 import {
-  Exercise, IntervalExercise, ChordExercise, RhythmExercise, NoteExercise, MelodyExercise,
-  ExerciseResult, ModuleId, ChordType,
+  Exercise,
+  IntervalExercise,
+  ChordExercise,
+  RhythmExercise,
+  NoteExercise,
+  MelodyExercise,
+  ExerciseResult,
+  ModuleId,
+  ChordType,
 } from '../../core/models';
 import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-panel.component';
 import { PrimaryButtonComponent } from '../../shared/components/primary-button/primary-button.component';
 import { XpBarComponent } from '../../shared/components/xp-bar/xp-bar.component';
+import { SessionResultComponent } from '../../shared/components/session-result/session-result.component';
 import { PianoKeyboardComponent } from '../../shared/components/piano-keyboard/piano-keyboard.component';
 import { ALL_KEYS } from '../../shared/components/piano-keyboard/piano-keyboard.component';
-import { PianoTutorialComponent, TUTORIAL_STORAGE_KEY } from '../../shared/components/piano-tutorial/piano-tutorial.component';
+import {
+  PianoTutorialComponent,
+  TUTORIAL_STORAGE_KEY,
+} from '../../shared/components/piano-tutorial/piano-tutorial.component';
 
 type PracticePhase = 'intro' | 'exercise' | 'feedback' | 'result';
 
 const INTERVAL_NAMES: Record<number, string> = {
-  0: 'interval.unison', 1: 'interval.minor2', 2: 'interval.major2',
-  3: 'interval.minor3', 4: 'interval.major3', 5: 'interval.perfect4',
-  6: 'interval.tritone', 7: 'interval.perfect5', 8: 'interval.minor6',
-  9: 'interval.major6', 10: 'interval.minor7', 11: 'interval.major7',
+  0: 'interval.unison',
+  1: 'interval.minor2',
+  2: 'interval.major2',
+  3: 'interval.minor3',
+  4: 'interval.major3',
+  5: 'interval.perfect4',
+  6: 'interval.tritone',
+  7: 'interval.perfect5',
+  8: 'interval.minor6',
+  9: 'interval.major6',
+  10: 'interval.minor7',
+  11: 'interval.major7',
   12: 'interval.octave',
+};
+
+const EXERCISE_PRESENTATION: Record<Exercise['type'], { icon: string; label: string }> = {
+  'note-id': { icon: 'piano', label: 'exercise.note.title' },
+  rhythm: { icon: 'graphic_eq', label: 'exercise.rhythm.title' },
+  interval: { icon: 'hearing', label: 'exercise.interval.title' },
+  chord: { icon: 'piano', label: 'exercise.chord.title' },
+  melody: { icon: 'queue_music', label: 'exercise.melody.title' },
+  theory: { icon: 'psychology', label: 'practice.theory.label' },
 };
 
 @Component({
   selector: 'app-practice',
   imports: [
     MatIconModule,
-    GlassPanelComponent, PrimaryButtonComponent, XpBarComponent, PianoKeyboardComponent,
+    A11yModule,
+    GlassPanelComponent,
+    PrimaryButtonComponent,
+    XpBarComponent,
+    SessionResultComponent,
+    PianoKeyboardComponent,
     PianoTutorialComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,13 +98,19 @@ const INTERVAL_NAMES: Record<number, string> = {
     trigger('feedback', [
       transition(':enter', [
         style({ opacity: 0, transform: 'scale(0.8)' }),
-        animate('300ms cubic-bezier(0.34,1.56,0.64,1)', style({ opacity: 1, transform: 'scale(1)' })),
+        animate(
+          '300ms cubic-bezier(0.34,1.56,0.64,1)',
+          style({ opacity: 1, transform: 'scale(1)' }),
+        ),
       ]),
     ]),
     trigger('countdownPop', [
       transition(':enter', [
         style({ opacity: 0, transform: 'scale(0.4)' }),
-        animate('300ms cubic-bezier(0.34,1.56,0.64,1)', style({ opacity: 1, transform: 'scale(1)' })),
+        animate(
+          '300ms cubic-bezier(0.34,1.56,0.64,1)',
+          style({ opacity: 1, transform: 'scale(1)' }),
+        ),
       ]),
       transition('* => *', [
         style({ transform: 'scale(0.4)' }),
@@ -82,14 +133,63 @@ export class PracticeComponent implements OnInit, OnDestroy {
   readonly lastXpEarned = signal(0);
   readonly sessionXp = signal(0);
   readonly sessionResults = signal<ExerciseResult[]>([]);
+  readonly reviewQueue = signal<Exercise[]>([]);
+  readonly reviewing = signal(false);
+  readonly combo = signal(0);
+  readonly bestCombo = signal(0);
+  readonly mode = signal<PracticeMode>('guided');
+  readonly modes: PracticeMode[] = ['guided', 'standard', 'challenge'];
+  readonly loading = signal(true);
+  readonly loadError = signal(false);
+  readonly freePractice = signal(false);
+  readonly lessonIndex = signal(0);
+  readonly lessonSize = signal(0);
+  readonly lessonXp = signal(0);
+  readonly exitConfirm = signal(false);
+  readonly playbackActive = signal(false);
+  private playbackIndicatorTimer: ReturnType<typeof setTimeout> | null = null;
+  readonly exercisePresentation = computed(() => {
+    const exercise = this.currentExercise();
+    return exercise ? EXERCISE_PRESENTATION[exercise.type] : null;
+  });
+  readonly sessionStars = computed(() =>
+    this.accuracy() === 100 ? 3 : this.accuracy() >= 70 ? 2 : 1,
+  );
+  readonly theoryExercise = computed(() => {
+    const exercise = this.currentExercise();
+    return exercise?.type === 'theory' ? exercise : null;
+  });
+  readonly concept = computed(
+    () => MODULE_CONCEPTS[this.currentExercise()?.moduleId ?? this.moduleId],
+  );
+  readonly phaseHeading = viewChild<ElementRef<HTMLElement>>('phaseHeading');
+  readonly sessionLabel = computed(() =>
+    this.reviewing()
+      ? this.i18n.t('journey.review.round')
+      : this.freePractice()
+        ? this.i18n.t('journey.free')
+        : this.i18n.t('journey.lesson.label', { n: this.lessonIndex() + 1 }),
+  );
+  private lesson?: JourneyLesson;
+  private sourceExercises: Exercise[] = [];
+  private playbackTimer: ReturnType<typeof setTimeout> | null = null;
+  private destroyed = false;
+  readonly accuracy = computed(() => {
+    const results = this.sessionResults();
+    return results.length
+      ? Math.round((results.filter((result) => result.correct).length / results.length) * 100)
+      : 0;
+  });
 
   // Estado de identificação de nota
   readonly noteHintActive = signal(false);
   private noteHintTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Estado de melodia
-  readonly melodyPhase = signal<'listen' | 'explore' | 'countdown' | 'recording' | 'play'>('listen');
-  readonly melodyStep = signal(0);          // qual nota o usuário deve tocar agora
+  readonly melodyPhase = signal<'listen' | 'explore' | 'countdown' | 'recording' | 'play'>(
+    'listen',
+  );
+  readonly melodyStep = signal(0); // qual nota o usuário deve tocar agora
   readonly melodyWrongNote = signal<string | null>(null);
   readonly melodyPlayedNotes = signal<string[]>([]); // notas tocadas corretamente
   private melodyTimers: ReturnType<typeof setTimeout>[] = [];
@@ -127,13 +227,8 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private rhythmBeatIndex = 0;
   private rhythmExpectedTimes: number[] = [];
 
-  // Auto-avanço após acerto
-  readonly autoAdvancing = signal(false);
-  private autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
-  private static readonly AUTO_ADVANCE_MS = 1400;
-
   readonly moduleName = computed(() => {
-    const mod = this.api.modules().find(m => m.id === this.moduleId);
+    const mod = this.api.modules().find((m) => m.id === this.moduleId);
     return mod ? this.i18n.tStr(mod.nameKey) : '';
   });
 
@@ -143,16 +238,17 @@ export class PracticeComponent implements OnInit, OnDestroy {
     return list[idx] ?? null;
   });
 
-  readonly isLastExercise = computed(() =>
-    this.currentIndex() >= this.exercises().length - 1
-  );
+  readonly isLastExercise = computed(() => this.currentIndex() >= this.exercises().length - 1);
 
-  readonly totalXp = computed(() =>
-    this.exercises().reduce((sum, e) => sum + e.xpReward, 0)
-  );
+  readonly totalXp = computed(() => this.exercises().reduce((sum, e) => sum + e.xpReward, 0));
 
-  readonly correctCount = computed(() =>
-    this.sessionResults().filter(r => r.correct).length
+  readonly correctCount = computed(
+    () =>
+      new Set(
+        this.sessionResults()
+          .filter((result) => result.correct)
+          .map((result) => result.exerciseId),
+      ).size,
   );
 
   readonly rhythmBeats = computed(() => {
@@ -200,9 +296,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   });
 
   // Tecla a iluminar durante a reprodução automática da melodia
-  readonly melodyHighlightNote = computed<string | null>(() =>
-    this.melodyPlayingNote()
-  );
+  readonly melodyHighlightNote = computed<string | null>(() => this.melodyPlayingNote());
 
   readonly explanationText = computed(() => {
     const ex = this.currentExercise();
@@ -211,23 +305,21 @@ export class PracticeComponent implements OnInit, OnDestroy {
     // Ritmo não precisa de explanationKey — sempre mostra feedback
     if (ex.type === 'rhythm') {
       return correct
-        ? 'Ritmo perfeito! Seu timing está excelente.'
+        ? 'Pulso consistente! As colcheias duram metade das semínimas; as pausas também ocupam tempo.'
         : 'O ritmo não ficou preciso. Ouça com atenção e toque junto com as batidas.';
     }
-    if (!ex.explanationKey) return null;
+    if (ex.type === 'theory') return this.i18n.tStr(ex.explanationKey ?? '');
     const ex2 = ex as IntervalExercise;
     if (ex.type === 'interval') {
       const name = this.i18n.tStr(INTERVAL_NAMES[ex2.semitones]);
       return correct
-        ? `O intervalo era uma ${name}. Bem reconhecido!`
-        : `O intervalo correto era: ${name}.`;
+        ? `${name}: ${ex2.semitones} semitons entre as notas. Bem reconhecido!`
+        : `O intervalo correto era ${name}: ${ex2.semitones} semitons entre as notas.`;
     }
     if (ex.type === 'chord') {
       const c = ex as ChordExercise;
       const name = this.i18n.tStr('chord.' + c.chordType);
-      return correct
-        ? `O acorde era ${name}. Ouvido afinado!`
-        : `O acorde correto era: ${name}.`;
+      return correct ? `O acorde era ${name}. Ouvido afinado!` : `O acorde correto era: ${name}.`;
     }
     if (ex.type === 'note-id') {
       const n = ex as NoteExercise;
@@ -237,7 +329,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     }
     if (ex.type === 'melody') {
       const m = ex as MelodyExercise;
-      const seq = m.notes.map(n => n.note.replace(/\d/, '')).join(' → ');
+      const seq = m.notes.map((n) => n.note.replace(/\d/, '')).join(' → ');
       const score = this.melodyScore();
       if (score !== null) {
         return correct
@@ -263,13 +355,23 @@ export class PracticeComponent implements OnInit, OnDestroy {
   private readonly audio = inject(AudioService);
   private readonly bgTrack = inject(BackgroundTrackService);
   private readonly progress = inject(ProgressService);
+  private readonly journey = inject(JourneyService);
   private readonly storage = inject(StorageService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  constructor() {
+    effect(() => this.phaseHeading()?.nativeElement.focus());
+  }
+
   private readonly onKeydown = (event: KeyboardEvent): void => {
     if (
       event.code === 'Space' &&
+      !event.repeat &&
+      !(
+        event.target instanceof HTMLElement &&
+        event.target.closest('button, input, select, textarea')
+      ) &&
       this.phase() === 'exercise' &&
       this.currentExercise()?.type === 'rhythm'
     ) {
@@ -283,30 +385,87 @@ export class PracticeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     document.addEventListener('keydown', this.onKeydown);
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') as ModuleId;
-    this.loadExercises();
+    const savedMode = this.storage.get<string>('duomusic_practice_mode', 'guided');
+    this.mode.set(savedMode === 'standard' || savedMode === 'challenge' ? savedMode : 'guided');
+    this.freePractice.set(this.route.snapshot.queryParamMap?.get('mode') === 'free');
+    void this.loadExercises();
   }
 
-  private async loadExercises(): Promise<void> {
-    // Tenta gerar exercícios via LLM (Gemini) com aleatoriedade
-    const exerciseList = await this.api.generateExercises(this.moduleId, 5);
-    if (!exerciseList.length) {
-      this.router.navigate(['/home']);
-      return;
+  async loadExercises(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(false);
+    try {
+      if (!this.api.modules().some((module) => module.id === this.moduleId)) {
+        this.router.navigate(['/home']);
+        return;
+      }
+      if (this.freePractice()) {
+        this.sourceExercises = (await this.api.generateExercises(this.moduleId, 5))
+          .slice(0, 5)
+          .map((exercise) => ({ ...exercise, id: `free-${exercise.id}`, moduleId: this.moduleId }));
+      } else {
+        const requested = this.route.snapshot.queryParamMap?.get('lesson');
+        this.lesson =
+          this.route.snapshot.queryParamMap?.get('mode') === 'review'
+            ? this.journey.reviewLesson(this.moduleId)
+            : requested !== null && requested !== undefined
+              ? this.journey
+                  .lessons(this.moduleId)
+                  .find((lesson) => lesson.index === Number(requested) && lesson.unlocked)
+              : this.journey.nextLesson(this.moduleId);
+        this.sourceExercises = this.lesson?.exercises ?? [];
+        this.lessonIndex.set(this.lesson?.index ?? 0);
+      }
+      if (this.destroyed) return;
+      this.selectMode(this.mode());
+      this.loadError.set(!this.exercises().length);
+    } catch {
+      this.loadError.set(true);
+    } finally {
+      if (!this.destroyed) this.loading.set(false);
     }
-    this.exercises.set(exerciseList);
+  }
+
+  selectMode(mode: PracticeMode): void {
+    if (this.phase() !== 'intro') return;
+    this.mode.set(mode);
+    this.storage.set('duomusic_practice_mode', mode);
+    this.exercises.set(
+      this.lesson
+        ? this.journey.prepare(this.lesson, this.moduleId, mode)
+        : this.sourceExercises.length
+          ? [
+              ...this.sourceExercises.map((exercise) => this.journey.adapt(exercise, mode)),
+              theoryForModule(this.moduleId, mode, 0),
+            ]
+          : [],
+    );
+    this.lessonSize.set(this.exercises().length);
+    this.lessonXp.set(this.totalXp());
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    this.stopPlaybackIndicator();
+    if (this.playbackTimer) clearTimeout(this.playbackTimer);
     document.removeEventListener('keydown', this.onKeydown);
     this.bgTrack.stop();
     this.clearRhythmTimer();
     this.clearMelodyTimers();
     if (this.noteHintTimer) clearTimeout(this.noteHintTimer);
     if (this.melodyRecordingTimer) clearTimeout(this.melodyRecordingTimer);
-    this.cancelAutoAdvance();
   }
 
   startPractice(): void {
+    if (!this.exercises().length || this.loading()) return;
+    this.lessonSize.set(this.exercises().length);
+    this.lessonXp.set(this.totalXp());
+    this.sessionResults.set([]);
+    this.sessionXp.set(0);
+    this.reviewQueue.set([]);
+    this.reviewing.set(false);
+    this.combo.set(0);
+    this.bestCombo.set(0);
     this.phase.set('exercise');
     this.currentIndex.set(0);
     this.exerciseStartMs = Date.now();
@@ -315,7 +474,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.audio.resume().then(() => this.bgTrack.start(this.moduleId));
     this.checkAndShowTutorial();
     // Reprodução automática do exercício de áudio
-    setTimeout(() => this.playCurrentExercise(), 500);
+    this.schedulePlayback();
   }
 
   closeTutorial(): void {
@@ -324,6 +483,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     }
     this.tutorialAutoShown = false;
     this.showTutorial.set(false);
+    this.schedulePlayback();
   }
 
   openTutorial(): void {
@@ -344,21 +504,25 @@ export class PracticeComponent implements OnInit, OnDestroy {
 
   playCurrentExercise(): void {
     const ex = this.currentExercise();
-    if (!ex) return;
+    if (!ex || this.destroyed || this.showTutorial()) return;
     this.audio.resume().then(() => {
+      if (this.destroyed || this.currentExercise() !== ex) return;
       const offset = this.audio.getScheduleOffsetMs();
       if (ex.type === 'interval') {
         const ie = ex as IntervalExercise;
         this.bgTrack.duckFor(800 * 2 + 150 + offset + 300);
         this.audio.playInterval(ie.rootFreq, ie.semitones, 800);
+        this.indicatePlayback(1750 + offset);
       } else if (ex.type === 'chord') {
         const ce = ex as ChordExercise;
         this.bgTrack.duckFor(1200 + offset + 300);
         this.audio.playChord(ce.rootFreq, ce.chordType, 1200);
+        this.indicatePlayback(1200 + offset);
       } else if (ex.type === 'note-id') {
         const ne = ex as NoteExercise;
         this.bgTrack.duckFor(900 + offset + 300);
         this.audio.playTone(ne.noteFreq, 900);
+        this.indicatePlayback(900 + offset);
         if (ne.showHint) {
           this.noteHintActive.set(true);
           this.noteHintTimer = setTimeout(() => this.noteHintActive.set(false), 1800);
@@ -384,6 +548,8 @@ export class PracticeComponent implements OnInit, OnDestroy {
       correct = this.selectedAnswer() === (ex as ChordExercise).chordType;
     } else if (ex.type === 'note-id') {
       correct = this.selectedAnswer() === (ex as NoteExercise).noteName;
+    } else if (ex.type === 'theory') {
+      correct = this.selectedAnswer() === ex.answer;
     }
 
     this.finishExercise(correct, correct ? ex.xpReward : 0);
@@ -397,7 +563,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   /** Seleciona uma das alternativas apresentadas no note-id e submete */
   selectNoteAnswer(note: string): void {
     this.selectAnswer(note);
-    setTimeout(() => this.submitAnswer(), 150);
+    this.submitAnswer();
   }
 
   // ── Melody ────────────────────────────────────────────────────────────────
@@ -408,11 +574,10 @@ export class PracticeComponent implements OnInit, OnDestroy {
     const totalMs = this.audio.playMelody(ex.notes, (idx) => {
       this.melodyPlayingNote.set(ex.notes[idx].note);
       const dur = ex.notes[idx].durationMs;
-      this.melodyTimers.push(
-        setTimeout(() => this.melodyPlayingNote.set(null), dur + 60),
-      );
+      this.melodyTimers.push(setTimeout(() => this.melodyPlayingNote.set(null), dur + 60));
     });
     this.bgTrack.duckFor(totalMs + this.audio.getScheduleOffsetMs() + 300);
+    this.indicatePlayback(totalMs + this.audio.getScheduleOffsetMs());
   }
 
   /** Transição de listen → explore (exploração livre) */
@@ -445,10 +610,10 @@ export class PracticeComponent implements OnInit, OnDestroy {
       };
 
       this.melodyCountdown.set(-1);
-      t(0,            () => this.melodyCountdown.set(3));
-      t(msBeat,       () => this.melodyCountdown.set(2));
-      t(2 * msBeat,   () => this.melodyCountdown.set(1));
-      t(3 * msBeat,   () => {
+      t(0, () => this.melodyCountdown.set(3));
+      t(msBeat, () => this.melodyCountdown.set(2));
+      t(2 * msBeat, () => this.melodyCountdown.set(1));
+      t(3 * msBeat, () => {
         this.melodyCountdown.set(0); // GO!
       });
       t(4 * msBeat, () => {
@@ -469,7 +634,9 @@ export class PracticeComponent implements OnInit, OnDestroy {
     // Calcula duração total da melodia + margem de 50%
     let totalMs = 0;
     const gapMs = 80;
-    ex.notes.forEach(n => { totalMs += n.durationMs + gapMs; });
+    ex.notes.forEach((n) => {
+      totalMs += n.durationMs + gapMs;
+    });
     const recordingLimit = totalMs * 1.5;
 
     this.melodyRecordingTimer = setTimeout(() => {
@@ -548,7 +715,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     const gapMs = 80;
     const expectedTimes: number[] = [];
     let cumMs = 0;
-    expected.forEach(n => {
+    expected.forEach((n) => {
       expectedTimes.push(cumMs);
       cumMs += n.durationMs + gapMs;
     });
@@ -586,7 +753,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   private clearMelodyTimers(): void {
-    this.melodyTimers.forEach(id => clearTimeout(id));
+    this.melodyTimers.forEach((id) => clearTimeout(id));
     this.melodyTimers = [];
   }
 
@@ -608,7 +775,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.audio.resume().then(() => {
       // Duck trilha de fundo durante countdown + padrão rítmico
       let patternDurationMs = 0;
-      ex.pattern.forEach(beat => {
+      ex.pattern.forEach((beat) => {
         patternDurationMs += this.noteDurationMs(beat, msBeat);
       });
       this.bgTrack.duckFor(4 * msBeat + patternDurationMs + this.audio.getScheduleOffsetMs() + 300);
@@ -647,17 +814,17 @@ export class PracticeComponent implements OnInit, OnDestroy {
       };
 
       this.countdown.set(-1); // esconde até o offset passar
-      t(0,            () => this.countdown.set(3));
-      t(msBeat,       () => this.countdown.set(2));
-      t(2 * msBeat,   () => this.countdown.set(1));
-      t(3 * msBeat,   () => this.countdown.set(0));  // GO!
-      t(4 * msBeat,   () => this.countdown.set(-1)); // esconde
+      t(0, () => this.countdown.set(3));
+      t(msBeat, () => this.countdown.set(2));
+      t(2 * msBeat, () => this.countdown.set(1));
+      t(3 * msBeat, () => this.countdown.set(0)); // GO!
+      t(4 * msBeat, () => this.countdown.set(-1)); // esconde
 
       const rhythmVisualStart = 4 * msBeat;
       let cumMs = 0;
       ex.pattern.forEach((beat, idx) => {
         const beatDelay = rhythmVisualStart + cumMs;
-        const duration  = this.noteDurationMs(beat, msBeat);
+        const duration = this.noteDurationMs(beat, msBeat);
         t(beatDelay, () => {
           this.activeBeat.set(idx);
           this.rhythmBeatIndex = idx + 1;
@@ -681,7 +848,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
       // Expected tap times: alinhados com visual + áudio (ambos usam o mesmo offset)
       const rhythmStartMs = Date.now() + offsetMs + 4 * msBeat;
       let msCum = 0;
-      this.rhythmExpectedTimes = ex.pattern.map(note => {
+      this.rhythmExpectedTimes = ex.pattern.map((note) => {
         const time = rhythmStartMs + msCum;
         msCum += this.noteDurationMs(note, msBeat);
         return time;
@@ -722,7 +889,7 @@ export class PracticeComponent implements OnInit, OnDestroy {
       this.showRhythmTapFeedback('correct');
     } else {
       // Toque fora do tempo — erro
-      this.rhythmExtraTaps.update(n => n + 1);
+      this.rhythmExtraTaps.update((n) => n + 1);
       this.showRhythmTapFeedback('wrong');
     }
 
@@ -748,15 +915,12 @@ export class PracticeComponent implements OnInit, OnDestroy {
     }
     this.rhythmBeatStatus.set(statuses);
 
-    const nonRestCount = ex.pattern.filter(b => b !== 'rest').length;
-    const hits = statuses.filter(s => s === 'hit').length;
-    const misses = nonRestCount - hits;
+    const nonRestCount = ex.pattern.filter((b) => b !== 'rest').length;
+    const hits = statuses.filter((s) => s === 'hit').length;
     const extras = this.rhythmExtraTaps();
-    const totalErrors = misses + extras;
-
-    // Quase perfeito: max 1 erro para padrões com 6+ batidas, zero para menores
-    const maxErrors = nonRestCount >= 6 ? 1 : 0;
-    const correct = totalErrors <= maxErrors;
+    const precision = nonRestCount > 0 ? Math.max(0, hits - extras) / nonRestCount : 0;
+    const threshold = this.mode() === 'guided' ? 0.6 : this.mode() === 'challenge' ? 0.95 : 0.8;
+    const correct = precision >= threshold;
 
     this.finishExercise(correct, correct ? ex.xpReward : 0);
   }
@@ -764,30 +928,54 @@ export class PracticeComponent implements OnInit, OnDestroy {
   // ── Navigation ────────────────────────────────────────────────────────────
 
   retry(): void {
-    this.cancelAutoAdvance();
+    if (this.lastCorrect()) return;
     this.resetExerciseState();
     this.phase.set('exercise');
     this.exerciseStartMs = Date.now();
-    setTimeout(() => this.playCurrentExercise(), 400);
+    this.schedulePlayback();
   }
 
   nextExercise(): void {
     if (this.isLastExercise()) {
-      this.bgTrack.stop();
-      this.phase.set('result');
-      return;
+      if (this.reviewQueue().length) {
+        this.exercises.set([...this.reviewQueue()]);
+        this.reviewQueue.set([]);
+        this.reviewing.set(true);
+        this.currentIndex.set(0);
+      } else {
+        this.bgTrack.stop();
+        this.phase.set('result');
+        return;
+      }
+    } else {
+      this.currentIndex.update((index) => index + 1);
     }
-    this.currentIndex.update(i => i + 1);
     this.phase.set('exercise');
     this.resetExerciseState();
     this.exerciseStartMs = Date.now();
     this.checkAndShowTutorial();
-    setTimeout(() => this.playCurrentExercise(), 400);
+    this.schedulePlayback();
   }
 
   goBack(): void {
+    if (this.phase() === 'exercise' || this.phase() === 'feedback') {
+      this.exitConfirm.set(true);
+      return;
+    }
+    this.leavePractice();
+  }
+
+  leavePractice(): void {
     this.bgTrack.stop();
     this.router.navigate(['/home']);
+  }
+
+  private schedulePlayback(): void {
+    if (this.playbackTimer) clearTimeout(this.playbackTimer);
+    this.playbackTimer = setTimeout(() => {
+      if (this.phase() === 'exercise' && !this.showTutorial() && !this.destroyed)
+        this.playCurrentExercise();
+    }, 400);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -802,7 +990,23 @@ export class PracticeComponent implements OnInit, OnDestroy {
   }
 
   private finishExercise(correct: boolean, xpEarned: number): void {
+    if (this.phase() !== 'exercise') return;
+    this.stopPlaybackIndicator();
     const ex = this.currentExercise()!;
+    const alreadyCorrect = this.sessionResults().some(
+      (result) => result.exerciseId === ex.id && result.correct,
+    );
+    if (alreadyCorrect) xpEarned = 0;
+    if (correct) {
+      this.reviewQueue.update((queue) => queue.filter((exercise) => exercise.id !== ex.id));
+      this.combo.update((combo) => combo + 1);
+      this.bestCombo.update((best) => Math.max(best, this.combo()));
+    } else {
+      this.combo.set(0);
+      this.reviewQueue.update((queue) =>
+        queue.some((exercise) => exercise.id === ex.id) ? queue : [...queue, ex],
+      );
+    }
     const durationMs = Date.now() - this.exerciseStartMs;
     const result: ExerciseResult = {
       exerciseId: ex.id,
@@ -816,8 +1020,8 @@ export class PracticeComponent implements OnInit, OnDestroy {
     this.progress.recordResult(result);
     this.lastCorrect.set(correct);
     this.lastXpEarned.set(xpEarned);
-    this.sessionXp.update(s => s + xpEarned);
-    this.sessionResults.update(r => [...r, result]);
+    this.sessionXp.update((s) => s + xpEarned);
+    this.sessionResults.update((r) => [...r, result]);
     this.phase.set('feedback');
 
     // Play audio feedback (duck trilha de fundo)
@@ -832,25 +1036,13 @@ export class PracticeComponent implements OnInit, OnDestroy {
         this.audio.playTone(220, 400, 'sawtooth', undefined, 0.15);
       }
     });
-
-    if (correct) {
-      this.autoAdvancing.set(true);
-      this.autoAdvanceTimer = setTimeout(() => {
-        this.autoAdvancing.set(false);
-        this.nextExercise();
-      }, PracticeComponent.AUTO_ADVANCE_MS);
-    }
-  }
-
-  private cancelAutoAdvance(): void {
-    if (this.autoAdvanceTimer !== null) {
-      clearTimeout(this.autoAdvanceTimer);
-      this.autoAdvanceTimer = null;
-    }
-    this.autoAdvancing.set(false);
   }
 
   private resetExerciseState(): void {
+    this.stopPlaybackIndicator();
+    if (this.playbackTimer) clearTimeout(this.playbackTimer);
+    if (this.noteHintTimer) clearTimeout(this.noteHintTimer);
+    this.noteHintActive.set(false);
     this.selectedAnswer.set(null);
     this.tappedBeats.set([]);
     this.activeBeat.set(-1);
@@ -885,8 +1077,20 @@ export class PracticeComponent implements OnInit, OnDestroy {
     return note === 'eighth' ? msBeat / 2 : msBeat;
   }
 
+  private indicatePlayback(durationMs: number): void {
+    this.stopPlaybackIndicator();
+    this.playbackActive.set(true);
+    this.playbackIndicatorTimer = setTimeout(() => this.playbackActive.set(false), durationMs);
+  }
+
+  private stopPlaybackIndicator(): void {
+    if (this.playbackIndicatorTimer) clearTimeout(this.playbackIndicatorTimer);
+    this.playbackIndicatorTimer = null;
+    this.playbackActive.set(false);
+  }
+
   private clearRhythmTimer(): void {
-    this.rhythmTimers.forEach(id => clearTimeout(id));
+    this.rhythmTimers.forEach((id) => clearTimeout(id));
     this.rhythmTimers = [];
   }
 
@@ -898,9 +1102,8 @@ export class PracticeComponent implements OnInit, OnDestroy {
    */
   private generateNoteOptions(correctNote: string): string[] {
     const correctLabel = this.noteLabel(correctNote);
-    const naturalNotes = ALL_KEYS
-      .filter(k => !k.isBlack)
-      .map(k => k.note)
+    const naturalNotes = ALL_KEYS.filter((k) => !k.isBlack)
+      .map((k) => k.note)
       .sort(() => Math.random() - 0.5);
 
     const usedLabels = new Set<string>([correctLabel]);

@@ -1,7 +1,6 @@
-import {
-  Component, ChangeDetectionStrategy, input, output, inject,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, inject } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
+import { A11yModule } from '@angular/cdk/a11y';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { PianoKeyboardComponent } from '../piano-keyboard/piano-keyboard.component';
 import { ALL_KEYS } from '../piano-keyboard/piano-keyboard.component';
@@ -12,21 +11,22 @@ export const TUTORIAL_STORAGE_KEY = 'duomusic_piano_tutorial_seen';
 @Component({
   selector: 'app-piano-tutorial',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PianoKeyboardComponent, PrimaryButtonComponent],
+  imports: [A11yModule, PianoKeyboardComponent, PrimaryButtonComponent],
   animations: [
     trigger('overlay', [
       transition(':enter', [
         style({ opacity: 0 }),
         animate('200ms ease-out', style({ opacity: 1 })),
       ]),
-      transition(':leave', [
-        animate('150ms ease-in', style({ opacity: 0 })),
-      ]),
+      transition(':leave', [animate('150ms ease-in', style({ opacity: 0 }))]),
     ]),
     trigger('modal', [
       transition(':enter', [
         style({ opacity: 0, transform: 'scale(0.85)' }),
-        animate('280ms cubic-bezier(0.34,1.56,0.64,1)', style({ opacity: 1, transform: 'scale(1)' })),
+        animate(
+          '280ms cubic-bezier(0.34,1.56,0.64,1)',
+          style({ opacity: 1, transform: 'scale(1)' }),
+        ),
       ]),
       transition(':leave', [
         animate('150ms ease-in', style({ opacity: 0, transform: 'scale(0.9)' })),

@@ -1,0 +1,101 @@
+.session-result {
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background:
+    radial-gradient(ellipse at 50% 0, var(--color-primary-soft), transparent 60%),
+    var(--color-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  box-shadow: var(--glass-shadow);
+  &__medal {
+    display: grid;
+    place-items: center;
+    width: 96px;
+    height: 104px;
+    margin: 1.5rem auto 0;
+    border-radius: 28px 28px 40px 40px;
+    background: var(--color-warning-soft);
+    border: 2px solid var(--color-warning);
+    box-shadow: 0 6px 0 var(--color-primary-soft);
+    animation: dm-pop 500ms ease-out both;
+    mat-icon {
+      width: 60px;
+      height: 60px;
+      font-size: 60px;
+      color: var(--color-warning);
+    }
+  }
+  &__title {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 0.75rem;
+  }
+  &__stars {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 1.5rem;
+  }
+  &__stars mat-icon {
+    color: var(--color-on-surface-muted);
+    width: 50px;
+    height: 50px;
+    font-size: 50px;
+  }
+  &__stars .earned {
+    color: var(--color-warning);
+    animation: dm-pop 500ms ease-out both;
+    animation-delay: calc(var(--star) * 130ms);
+  }
+  &__stars mat-icon:nth-child(2) {
+    width: 64px;
+    height: 64px;
+    font-size: 64px;
+  }
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+  }
+  &__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.25rem;
+    background: var(--color-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    animation: dm-enter 350ms ease-out both;
+  }
+  &__stat mat-icon {
+    color: var(--color-primary);
+  }
+  &__stat:nth-child(2) {
+    background: var(--color-warning-soft);
+    mat-icon {
+      color: var(--color-warning);
+    }
+  }
+  &__stat strong {
+    font-size: clamp(1.25rem, 4vw, 1.875rem);
+  }
+  &__stat span,
+  &__note {
+    font-size: var(--text-xs);
+    color: var(--color-on-surface-muted);
+    line-height: 1.7;
+  }
+  &__note {
+    margin: 1.25rem 0 0;
+  }
+}
+@media (max-width: 400px) {
+  .session-result__stats {
+    gap: 0.35rem;
+  }
+  .session-result__stat span {
+    font-size: 0.7rem;
+  }
+}

@@ -17,9 +17,7 @@ describe('PianoTutorialComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PianoTutorialComponent, NoopAnimationsModule],
-      providers: [
-        { provide: AudioService, useValue: makeAudioSpy() },
-      ],
+      providers: [{ provide: AudioService, useValue: makeAudioSpy() }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PianoTutorialComponent);
@@ -97,5 +95,17 @@ describe('PianoTutorialComponent', () => {
     const overlay = fixture.nativeElement.querySelector('.piano-tutorial__overlay');
     overlay.click();
     expect(confirmSpy).toHaveBeenCalled();
+  });
+
+  it('exposes a named modal dialog with keyboard dismissal', () => {
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    const dialog: HTMLElement = fixture.nativeElement.querySelector('[role="dialog"]');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(dialog.getAttribute('aria-labelledby')).toBe('piano-tutorial-title');
+    const closed = vi.fn();
+    component.closed.subscribe(closed);
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(closed).toHaveBeenCalledOnce();
   });
 });

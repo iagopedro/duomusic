@@ -1,0 +1,45 @@
+<section class="session-result">
+  <span class="eyebrow">{{ i18n.t('practice.result.eyebrow') }}</span>
+  <div class="session-result__medal" aria-hidden="true">
+    <mat-icon role="presentation">workspace_premium</mat-icon>
+  </div>
+  <div
+    class="session-result__stars"
+    [attr.aria-label]="i18n.t('journey.stars', { n: stars() })"
+    role="img"
+  >
+    @for (star of [1, 2, 3]; track star) {
+      <mat-icon [class.earned]="star <= stars()" [style.--star]="star" aria-hidden="true">
+        {{ star <= stars() ? 'star' : 'star_outline' }}
+      </mat-icon>
+    }
+  </div>
+  <h2 #heading tabindex="-1" class="session-result__title">
+    {{ i18n.t('practice.result.title') }}
+  </h2>
+  <p class="page-description">{{ i18n.t('practice.result.desc') }}</p>
+  <p class="page-description">
+    {{ i18n.t('journey.mastered', { n: mastered(), total: total() }) }}
+  </p>
+  <div class="session-result__stats">
+    <div class="session-result__stat">
+      <mat-icon aria-hidden="true">adjust</mat-icon>
+      <strong>{{ accuracy() }}%</strong>
+      <span>{{ i18n.t('journey.accuracy') }}</span>
+    </div>
+    <div class="session-result__stat">
+      <mat-icon aria-hidden="true">bolt</mat-icon>
+      <strong>{{ xp() }}</strong>
+      <span>XP</span>
+    </div>
+    <div class="session-result__stat">
+      <mat-icon aria-hidden="true">local_fire_department</mat-icon>
+      <strong>{{ combo() }}</strong>
+      <span>{{ i18n.t('journey.best.combo') }}</span>
+    </div>
+  </div>
+  <app-primary-button size="lg" (clicked)="continued.emit()">
+    {{ i18n.t('practice.result.continue') }}<mat-icon aria-hidden="true">arrow_forward</mat-icon>
+  </app-primary-button>
+  <p class="session-result__note">{{ i18n.t('practice.result.saved') }}</p>
+</section>

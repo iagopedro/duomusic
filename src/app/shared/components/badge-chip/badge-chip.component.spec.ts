@@ -65,4 +65,17 @@ describe('BadgeChipComponent', () => {
     const chip = fixture.nativeElement.querySelector('.badge-chip');
     expect(chip.getAttribute('aria-label')).toContain('bloqueado');
   });
+
+  it('explains the requirement and status of a locked detailed achievement', () => {
+    fixture.componentRef.setInput('locked', true);
+    fixture.componentRef.setInput('detailed', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.badge-chip__description').textContent).toContain(
+      'Complete seu primeiro exercício.',
+    );
+    expect(fixture.nativeElement.querySelector('.badge-chip__status').textContent).toContain(
+      'A conquistar',
+    );
+    expect(fixture.nativeElement.querySelector('.badge-chip').getAttribute('role')).toBe('group');
+  });
 });

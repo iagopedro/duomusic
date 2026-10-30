@@ -1,428 +1,568 @@
+<div class="practice page-scroll">
+  <!-- Header -->
+  <header class="practice__header">
+    <button class="practice__back-btn" (click)="goBack()" [attr.aria-label]="i18n.t('common.back')">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="practice__module-name">{{ moduleName() }}</span>
+    @if (phase() !== 'intro' && phase() !== 'result') {
+      <span class="practice__counter">
+        {{ i18n.t('practice.exercise.of', { n: currentIndex() + 1, total: exercises().length }) }}
+      </span>
+    }
+  </header>
 
-    <div class="practice page-scroll">
-      <!-- Header -->
-      <header class="practice__header">
-        <button class="practice__back-btn" (click)="goBack()" [attr.aria-label]="i18n.t('common.back')">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-        <span class="practice__module-name">{{ moduleName() }}</span>
-        @if (phase() !== 'intro' && phase() !== 'result') {
-          <span class="practice__counter">
-            {{ i18n.t('practice.exercise.of', { n: currentIndex() + 1, total: exercises().length }) }}
-          </span>
-        }
-      </header>
+  <!-- Progress bar -->
+  @if (phase() !== 'intro' && phase() !== 'result') {
+    <app-xp-bar
+      [current]="correctCount()"
+      [max]="lessonSize()"
+      [ariaLabel]="i18n.t('journey.mastered', { n: correctCount(), total: lessonSize() })"
+      class="practice__progress"
+    />
+    <div class="practice__session-status" role="status" aria-live="polite">
+      <span
+        ><mat-icon aria-hidden="true">{{ reviewing() ? 'replay' : 'music_note' }}</mat-icon
+        >{{ sessionLabel() }}</span
+      >
+      <span
+        ><mat-icon aria-hidden="true">bolt</mat-icon>{{ combo() }}
+        {{ i18n.t('journey.combo') }}</span
+      >
+      <span>{{ sessionXp() }} XP</span>
+    </div>
+  }
 
-      <!-- Progress bar -->
-      @if (phase() !== 'intro' && phase() !== 'result') {
-        <app-xp-bar
-          [current]="currentIndex()"
-          [max]="exercises().length"
-          [ariaLabel]="'Progresso: exercício ' + (currentIndex() + 1) + ' de ' + exercises().length"
-          class="practice__progress"
-        />
-      }
-
-      <!-- PHASE: intro -->
-      @if (phase() === 'intro') {
-        <div class="practice__phase" [@fadeSlide]>
-        <app-glass-panel class="practice__intro-card">
-          <div class="practice__intro-content">
-            <span class="practice__intro-icon">🎯</span>
-            <h1 class="practice__intro-title">{{ i18n.t('practice.intro.title') }}</h1>
-            <p class="practice__intro-desc">{{ i18n.t('practice.intro.desc') }}</p>
-            <div class="practice__intro-stats">
-              <span>{{ exercises().length }} exercícios</span>
-              <span>{{ totalXp() }} XP no total</span>
-            </div>
-            <app-primary-button
-              size="lg"
-              style="width: 100%"
-              (clicked)="startPractice()"
-              [ariaLabel]="i18n.t('practice.start')"
-            >{{ i18n.t('practice.start') }}</app-primary-button>
+  <!-- PHASE: intro -->
+  @if (phase() === 'intro') {
+    <div class="practice__phase" [@fadeSlide]>
+      <section class="practice__intro-card">
+        <div class="practice__intro-content">
+          <span class="eyebrow">{{ i18n.t('practice.prepare') }}</span>
+          <mat-icon class="practice__journey-icon" aria-hidden="true">library_music</mat-icon>
+          <h1 #phaseHeading tabindex="-1" class="practice__intro-title">{{ moduleName() }}</h1>
+          <p class="practice__intro-desc">{{ concept() }}</p>
+          <div class="practice__learning-loop" [attr.aria-label]="i18n.t('practice.loop')">
+            <span
+              ><mat-icon aria-hidden="true">headphones</mat-icon
+              >{{ i18n.t('practice.step.listen') }}</span
+            >
+            <mat-icon aria-hidden="true">chevron_right</mat-icon>
+            <span
+              ><mat-icon aria-hidden="true">piano</mat-icon>{{ i18n.t('practice.step.play') }}</span
+            >
+            <mat-icon aria-hidden="true">chevron_right</mat-icon>
+            <span
+              ><mat-icon aria-hidden="true">auto_awesome</mat-icon
+              >{{ i18n.t('practice.step.grow') }}</span
+            >
           </div>
-        </app-glass-panel>
-      </div>
-      }
-
-      <!-- PHASE: exercise -->
-      @if (phase() === 'exercise') {
-        <div class="practice__phase" [@fadeSlide]>
-        <!-- Rhythm exercise -->
-        @if (currentExercise()?.type === 'rhythm') {
-          <app-glass-panel class="practice__exercise-card">
-            <h2 class="practice__q-label">{{ i18n.t('exercise.rhythm.hint') }}</h2>
-            <div class="practice__rhythm-pattern">
-              <!-- countdown overlay: elemento único, apenas o texto muda -->
-              @if (countdown() >= 0) {
-                <div class="practice__countdown"
-                     [class.practice__countdown--go]="countdown() === 0"
-                     [@countdownPop]="countdown()">
-                  {{ countdown() === 0 ? 'GO!' : countdown() }}
-                </div>
-              }
-              @for (beat of rhythmBeats(); track $index; let i = $index) {
-                <div
-                  class="practice__beat"
-                  [class.practice__beat--active]="activeBeat() === i"
-                  [class.practice__beat--hit]="rhythmBeatStatus()[i] === 'hit'"
-                  [class.practice__beat--miss]="rhythmBeatStatus()[i] === 'miss'"
-                  [class]="'practice__beat--' + beat"
-                >
-                  <span>{{ beat === 'quarter' ? '♩' : beat === 'eighth' ? '♪' : '𝄽' }}</span>
-                </div>
-              }
-            </div>
-            <div class="practice__rhythm-controls">
-              <div
-                class="practice__space-indicator"
-                [class.practice__space-indicator--active]="tapping()"
-                [class.practice__space-indicator--correct]="rhythmTapFeedback() === 'correct'"
-                [class.practice__space-indicator--wrong]="rhythmTapFeedback() === 'wrong'"
-                [class.practice__space-indicator--disabled]="!rhythmActive()"
-                aria-label="Pressione Espaço para tocar"
-              >
-                <span class="practice__space-key">ESPAÇO</span>
-              </div>
-            </div>
-            <div class="practice__rhythm-actions">
-              <app-primary-button
-                variant="secondary"
-                [disabled]="rhythmActive()"
-                (clicked)="startRhythm()"
-                style="width: 100%"
-              >
-                <mat-icon aria-hidden="true">play_arrow</mat-icon>
-                {{ i18n.t('exercise.rhythm.start') }}
-              </app-primary-button>
-            </div>
-          </app-glass-panel>
-        }
-
-        <!-- Interval exercise -->
-        @if (currentExercise()?.type === 'interval') {
-          <app-glass-panel class="practice__exercise-card">
-            <h2 class="practice__q-label">{{ i18n.t('exercise.interval.question') }}</h2>
-            <button
-              class="practice__play-btn"
-              (click)="playCurrentExercise()"
-              [attr.aria-label]="i18n.t('practice.play.again')"
-            >
-              <mat-icon aria-hidden="true">volume_up</mat-icon>
-              {{ i18n.t('practice.play.again') }}
-            </button>
-            <div class="practice__options-grid">
-              @for (opt of intervalOptions(); track $index) {
-                <button
-                  class="practice__option-btn"
-                  [class.practice__option-btn--selected]="selectedAnswer() === opt"
-                  (click)="selectAnswer(opt)"
-                  (keydown.enter)="selectAnswer(opt)"
-                  (keydown.space)="selectAnswer(opt)"
-                  [attr.aria-label]="intervalLabel(opt)"
-                  [attr.aria-pressed]="selectedAnswer() === opt"
-                >{{ intervalLabel(opt) }}</button>
-              }
-            </div>
-            <app-primary-button
-              [disabled]="selectedAnswer() === null"
-              style="width: 100%"
-              (clicked)="submitAnswer()"
-              [ariaLabel]="i18n.t('practice.submit')"
-            >{{ i18n.t('practice.submit') }}</app-primary-button>
-          </app-glass-panel>
-        }
-
-        <!-- Chord exercise -->
-        @if (currentExercise()?.type === 'chord') {
-          <app-glass-panel class="practice__exercise-card">
-            <h2 class="practice__q-label">{{ i18n.t('exercise.chord.question') }}</h2>
-            <button
-              class="practice__play-btn"
-              (click)="playCurrentExercise()"
-              [attr.aria-label]="i18n.t('practice.play.again')"
-            >
-              <mat-icon aria-hidden="true">volume_up</mat-icon>
-              {{ i18n.t('practice.play.again') }}
-            </button>
-            <div class="practice__options-grid practice__options-grid--2col">
-              @for (opt of chordOptions(); track $index) {
-                <button
-                  class="practice__option-btn"
-                  [class.practice__option-btn--selected]="selectedAnswer() === opt"
-                  (click)="selectAnswer(opt)"
-                  (keydown.enter)="selectAnswer(opt)"
-                  (keydown.space)="selectAnswer(opt)"
-                  [attr.aria-label]="chordLabel(opt)"
-                  [attr.aria-pressed]="selectedAnswer() === opt"
-                >{{ chordLabel(opt) }}</button>
-              }
-            </div>
-            <app-primary-button
-              [disabled]="selectedAnswer() === null"
-              style="width: 100%"
-              (clicked)="submitAnswer()"
-              [ariaLabel]="i18n.t('practice.submit')"
-            >{{ i18n.t('practice.submit') }}</app-primary-button>
-          </app-glass-panel>
-        }
-
-        <!-- Note-id exercise -->
-        @if (currentExercise()?.type === 'note-id') {
-          <app-glass-panel class="practice__exercise-card practice__exercise-card--note">
-            <h2 class="practice__q-label">{{ i18n.t('exercise.note.question') }}</h2>
-            @if (noteHintKey()) {
-              <p class="practice__note-hint-text">
-                {{ i18n.t('exercise.note.hint') }}
-              </p>
-            } @else {
-              <p class="practice__note-hint-text practice__note-hint-text--find">
-                {{ noteIdExploring() ? i18n.t('exercise.note.explore') : i18n.t('exercise.note.find') }}
-              </p>
+          <fieldset class="practice__modes">
+            <legend>{{ i18n.t('journey.mode') }}</legend>
+            @for (option of modes; track option) {
+              <label [class.active]="mode() === option">
+                <input
+                  type="radio"
+                  name="practice-mode"
+                  [value]="option"
+                  [checked]="mode() === option"
+                  (change)="selectMode(option)"
+                />
+                {{ i18n.tStr('journey.mode.' + option) }}
+              </label>
             }
-            <button
-              class="practice__play-btn"
-              (click)="playCurrentExercise()"
-              [attr.aria-label]="i18n.t('practice.play.again')"
-            >
-              <mat-icon aria-hidden="true">volume_up</mat-icon>
-              {{ i18n.t('practice.play.again') }}
-            </button>
-            <app-piano-keyboard
-              [highlightedNote]="noteHintKey()"
-              [selectedNote]="null"
-              [disabled]="!!noteHintKey()"
-              [showKeyboardHints]="true"
-              (noteTapped)="selectNoteAndSubmit($event)"
-            />
-            <!-- Alternativas para resposta -->
-            <div class="practice__note-options">
-              <div class="practice__options-grid practice__options-grid--2col">
-                @for (opt of noteIdOptions(); track opt) {
-                  <button
-                    class="practice__option-btn"
-                    [class.practice__option-btn--selected]="selectedAnswer() === opt"
-                    (click)="selectNoteAnswer(opt)"
-                    [attr.aria-label]="'Nota ' + opt"
-                    [attr.aria-pressed]="selectedAnswer() === opt"
-                  >{{ noteLabel(opt) }}</button>
-                }
-              </div>
-            </div>
-            <button
-              class="practice__play-btn practice__play-btn--subtle"
-              (click)="openTutorial()"
-            >
-              <mat-icon aria-hidden="true">help_outline</mat-icon>
-              {{ i18n.t('piano.tutorial.help_btn') }}
-            </button>
-          </app-glass-panel>
-        }
-
-        <!-- Melody exercise -->
-        @if (currentExercise()?.type === 'melody') {
-          <app-glass-panel class="practice__exercise-card practice__exercise-card--melody">
-
-            <!-- FASE LISTEN: ouvir a melodia -->
-            @if (melodyPhase() === 'listen') {
-              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.listen') }}</h2>
-              <div class="practice__melody-notes">
-                @for (n of melodyNotes(); track $index) {
-                  <span
-                    class="practice__melody-dot"
-                    [class.practice__melody-dot--active]="melodyHighlightNote() === n.note"
-                  >●</span>
-                }
-              </div>
-              <app-piano-keyboard
-                [highlightedNote]="melodyHighlightNote()"
-                [disabled]="true"
-                [showKeyboardHints]="true"
-              />
-              <div class="practice__melody-actions">
-                <button
-                  class="practice__play-btn"
-                  (click)="playCurrentExercise()"
-                  [attr.aria-label]="i18n.t('practice.play.again')"
-                >
-                  <mat-icon aria-hidden="true">volume_up</mat-icon>
-                  {{ i18n.t('practice.play.again') }}
-                </button>
-                <app-primary-button
-                  style="width: 100%"
-                  (clicked)="startMelodyExplore()"
-                  [ariaLabel]="i18n.t('exercise.melody.start')"
-                >
-                  <mat-icon aria-hidden="true">piano</mat-icon>
-                  {{ i18n.t('exercise.melody.start') }}
-                </app-primary-button>
-              </div>
-            }
-
-            <!-- FASE EXPLORE: exploração livre no piano -->
-            @if (melodyPhase() === 'explore') {
-              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.explore') }}</h2>
-              <app-piano-keyboard
-                [disabled]="false"
-                [showKeyboardHints]="true"
-                (noteTapped)="tapMelodyNote($event)"
-              />
-              <div class="practice__melody-explore-actions">
-                <button
-                  class="practice__play-btn"
-                  (click)="melodyBackToListen()"
-                >
-                  <mat-icon aria-hidden="true">replay</mat-icon>
-                  {{ i18n.t('exercise.melody.replay') }}
-                </button>
-                <app-primary-button
-                  style="width: 100%"
-                  (clicked)="startMelodyRecord()"
-                  [ariaLabel]="i18n.t('exercise.melody.record')"
-                >
-                  <mat-icon aria-hidden="true">mic</mat-icon>
-                  {{ i18n.t('exercise.melody.record') }}
-                </app-primary-button>
-                <button
-                  class="practice__play-btn practice__play-btn--subtle"
-                  (click)="openTutorial()"
-                >
-                  <mat-icon aria-hidden="true">help_outline</mat-icon>
-                  {{ i18n.t('piano.tutorial.help_btn') }}
-                </button>
-              </div>
-            }
-
-            <!-- FASE COUNTDOWN: contagem regressiva antes da gravação -->
-            @if (melodyPhase() === 'countdown') {
-              <h2 class="practice__q-label">{{ i18n.t('exercise.melody.recording') }}</h2>
-              <div class="practice__melody-countdown-container">
-                @if (melodyCountdown() >= 0) {
-                  <div class="practice__countdown"
-                       [class.practice__countdown--go]="melodyCountdown() === 0"
-                       [@countdownPop]="melodyCountdown()">
-                    {{ melodyCountdown() === 0 ? 'GO!' : melodyCountdown() }}
-                  </div>
-                }
-              </div>
-              <app-piano-keyboard
-                [disabled]="true"
-                [showKeyboardHints]="true"
-              />
-            }
-
-            <!-- FASE RECORDING: gravação ativa da melodia -->
-            @if (melodyPhase() === 'recording') {
-              <h2 class="practice__q-label practice__q-label--recording">{{ i18n.t('exercise.melody.recording') }}</h2>
-              <div class="practice__melody-progress">
-                @for (n of melodyNotes(); track $index; let i = $index) {
-                  <span
-                    class="practice__melody-step"
-                    [class.practice__melody-step--done]="i < melodyStep()"
-                    [class.practice__melody-step--current]="i === melodyStep()"
-                  >{{ n.note.replace(/\d/, '') }}</span>
-                }
-              </div>
-              <app-piano-keyboard
-                [highlightedNote]="melodyExpectedNote()"
-                [wrongNote]="melodyWrongNote()"
-                [disabled]="false"
-                [showKeyboardHints]="true"
-                (noteTapped)="tapMelodyNote($event)"
-              />
-              <div class="practice__recording-indicator">
-                <span class="practice__recording-dot"></span>
-                {{ i18n.t('exercise.melody.recording') }}
-              </div>
-            }
-
-          </app-glass-panel>
-        }
-      </div>
-      }
-
-      <!-- PHASE: feedback -->
-      @if (phase() === 'feedback') {
-        <div class="practice__phase" [@fadeSlide]>
-        <app-glass-panel class="practice__feedback-card" [class.correct]="lastCorrect()">
-          <div class="practice__feedback-icon" [@feedback]>
-            {{ lastCorrect() ? '🎉' : '😕' }}
+          </fieldset>
+          <p class="practice__intro-desc">{{ i18n.tStr('journey.mode.' + mode() + '.desc') }}</p>
+          <div class="practice__intro-stats">
+            <span>{{ sessionLabel() }}</span>
+            <span>{{ lessonSize() }} {{ i18n.t('journey.challenges') }}</span>
+            <span><mat-icon aria-hidden="true">bolt</mat-icon>{{ lessonXp() }} XP</span>
           </div>
-          <h2 class="practice__feedback-title">
-            {{ lastCorrect() ? i18n.t('practice.correct') : i18n.t('practice.wrong') }}
-          </h2>
-          @if (explanationText()) {
-            <p class="practice__feedback-explanation">
-              {{ explanationText() }}
-            </p>
+          @if (loading()) {
+            <p role="status">{{ i18n.t('journey.loading') }}</p>
           }
-          @if (melodyScore() !== null) {
-            <div class="practice__feedback-score" [class.practice__feedback-score--passed]="lastCorrect()">
-              {{ i18n.t('exercise.melody.score', { score: melodyScore()! }) }}
-            </div>
+          @if (loadError()) {
+            <p role="alert">{{ i18n.t('journey.load.error') }}</p>
+            <button class="practice__play-btn" (click)="loadExercises()">
+              {{ i18n.t('practice.retry') }}
+            </button>
           }
-          @if (lastCorrect()) {
-            <div class="practice__feedback-xp">
-              {{ i18n.t('practice.xp.earned', { xp: lastXpEarned() }) }}
-            </div>
-          }
-          <div class="practice__feedback-actions">
-            @if (!lastCorrect()) {
-              <app-primary-button
-                variant="secondary"
-                (clicked)="retry()"
-                [ariaLabel]="i18n.t('practice.retry')"
-              >{{ i18n.t('practice.retry') }}</app-primary-button>
-              <app-primary-button
-                (clicked)="nextExercise()"
-                [ariaLabel]="isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next')"
-              >
-                {{ isLastExercise() ? i18n.t('practice.finish') : i18n.t('practice.next') }}
-              </app-primary-button>
-            }
-            @if (lastCorrect()) {
-              <div class="practice__auto-advance-bar">
-                <div class="practice__auto-advance-fill"></div>
-              </div>
-            }
-          </div>
-        </app-glass-panel>
-      </div>
-      }
-
-      <!-- PHASE: result -->
-      @if (phase() === 'result') {
-        <div class="practice__phase" [@fadeSlide]>
-        <app-glass-panel class="practice__result-card">
-          <span class="practice__result-trophy">🏆</span>
-          <h2 class="practice__result-title">{{ i18n.t('practice.result.title') }}</h2>
-          <div class="practice__result-stats">
-            <div class="practice__result-stat">
-              <span class="practice__result-stat-value">{{ correctCount() }}</span>
-              <span class="practice__result-stat-label">{{ i18n.t('practice.result.correct', { n: correctCount() }) }}</span>
-            </div>
-            <div class="practice__result-stat">
-              <span class="practice__result-stat-value">{{ sessionXp() }}</span>
-              <span class="practice__result-stat-label">XP</span>
-            </div>
-          </div>
           <app-primary-button
             size="lg"
+            [disabled]="loading() || loadError() || !lessonSize()"
             style="width: 100%"
-            (clicked)="goBack()"
-            [ariaLabel]="i18n.t('practice.result.back')"
-          >{{ i18n.t('practice.result.back') }}</app-primary-button>
+            (clicked)="startPractice()"
+            [ariaLabel]="i18n.t('practice.start')"
+            ><mat-icon aria-hidden="true">play_arrow</mat-icon
+            >{{ i18n.t('practice.start') }}</app-primary-button
+          >
+          <span class="practice__gentle-note">{{ i18n.t('home.no-lives') }}</span>
+        </div>
+      </section>
+    </div>
+  }
+
+  <!-- PHASE: exercise -->
+  @if (phase() === 'exercise') {
+    <div class="practice__phase" [@fadeSlide]>
+      @if (exercisePresentation(); as presentation) {
+        <div class="practice__exercise-heading">
+          <span class="practice__type-icon"
+            ><mat-icon aria-hidden="true">{{ presentation.icon }}</mat-icon></span
+          >
+          <h2 #phaseHeading tabindex="-1" class="eyebrow">{{ i18n.tStr(presentation.label) }}</h2>
+          @if (currentExercise()?.type !== 'theory' && currentExercise()?.type !== 'rhythm') {
+            <div
+              class="practice__audio-wave"
+              [class.is-playing]="playbackActive()"
+              aria-hidden="true"
+            >
+              <i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <span class="sr-only" role="status">{{
+              i18n.t(playbackActive() ? 'practice.listen.active' : 'practice.listen.ready')
+            }}</span>
+          }
+        </div>
+        @if (i18n.tStr(currentExercise()?.conceptKey ?? '') !== i18n.tStr(presentation.label)) {
+          <p class="practice__concept-heading">
+            {{ i18n.tStr(currentExercise()?.conceptKey ?? '') }}
+          </p>
+        }
+      }
+      @if (theoryExercise(); as exercise) {
+        <app-glass-panel class="practice__theory">
+          <mat-icon class="practice__journey-icon" aria-hidden="true">psychology</mat-icon>
+          <h3 class="practice__q-label">{{ i18n.tStr(exercise.questionKey) }}</h3>
+          <div class="practice__options-grid">
+            @for (option of exercise.options; track option) {
+              <button
+                class="practice__option-btn"
+                [class.practice__option-btn--selected]="selectedAnswer() === option"
+                [attr.aria-pressed]="selectedAnswer() === option"
+                (click)="selectAnswer(option)"
+              >
+                {{ option }}
+              </button>
+            }
+          </div>
+          <app-primary-button [disabled]="selectedAnswer() === null" (clicked)="submitAnswer()">{{
+            i18n.t('practice.submit')
+          }}</app-primary-button>
         </app-glass-panel>
-      </div>
+      }
+      <!-- Rhythm exercise -->
+      @if (currentExercise()?.type === 'rhythm') {
+        <app-glass-panel class="practice__exercise-card">
+          <h2 class="practice__q-label">{{ i18n.t('exercise.rhythm.hint') }}</h2>
+          <div class="practice__rhythm-pattern">
+            <!-- countdown overlay: elemento único, apenas o texto muda -->
+            @if (countdown() >= 0) {
+              <div
+                class="practice__countdown"
+                [class.practice__countdown--go]="countdown() === 0"
+                [@countdownPop]="countdown()"
+              >
+                {{ countdown() === 0 ? 'GO!' : countdown() }}
+              </div>
+            }
+            @for (beat of rhythmBeats(); track $index; let i = $index) {
+              <div
+                class="practice__beat"
+                [class.practice__beat--active]="activeBeat() === i"
+                [class.practice__beat--hit]="rhythmBeatStatus()[i] === 'hit'"
+                [class.practice__beat--miss]="rhythmBeatStatus()[i] === 'miss'"
+                [class]="'practice__beat--' + beat"
+              >
+                <span>{{ beat === 'quarter' ? '♩' : beat === 'eighth' ? '♪' : '𝄽' }}</span>
+              </div>
+            }
+          </div>
+          <div class="practice__rhythm-controls">
+            <button
+              type="button"
+              class="practice__space-indicator"
+              [class.practice__space-indicator--active]="tapping()"
+              [class.practice__space-indicator--correct]="rhythmTapFeedback() === 'correct'"
+              [class.practice__space-indicator--wrong]="rhythmTapFeedback() === 'wrong'"
+              [class.practice__space-indicator--disabled]="!rhythmActive()"
+              [disabled]="!rhythmActive()"
+              (click)="handleTap()"
+              [attr.aria-label]="i18n.t('journey.tap')"
+            >
+              <mat-icon aria-hidden="true">touch_app</mat-icon>
+              <span class="practice__space-key">{{ i18n.t('journey.tap') }}</span>
+            </button>
+          </div>
+          <div class="practice__rhythm-actions">
+            <app-primary-button
+              variant="secondary"
+              [disabled]="rhythmActive()"
+              (clicked)="startRhythm()"
+              style="width: 100%"
+            >
+              <mat-icon aria-hidden="true">play_arrow</mat-icon>
+              {{ i18n.t('exercise.rhythm.start') }}
+            </app-primary-button>
+          </div>
+        </app-glass-panel>
       }
 
-      <div class="safe-bottom"></div>
+      <!-- Interval exercise -->
+      @if (currentExercise()?.type === 'interval') {
+        <app-glass-panel class="practice__exercise-card">
+          <h2 class="practice__q-label">{{ i18n.t('exercise.interval.question') }}</h2>
+          <button
+            class="practice__play-btn"
+            (click)="playCurrentExercise()"
+            [attr.aria-label]="i18n.t('practice.play.again')"
+          >
+            <mat-icon aria-hidden="true">volume_up</mat-icon>
+            {{ i18n.t('practice.play.again') }}
+          </button>
+          <div class="practice__options-grid">
+            @for (opt of intervalOptions(); track $index) {
+              <button
+                class="practice__option-btn"
+                [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                (click)="selectAnswer(opt)"
+                [attr.aria-label]="intervalLabel(opt)"
+                [attr.aria-pressed]="selectedAnswer() === opt"
+              >
+                {{ intervalLabel(opt) }}
+              </button>
+            }
+          </div>
+          <app-primary-button
+            [disabled]="selectedAnswer() === null"
+            style="width: 100%"
+            (clicked)="submitAnswer()"
+            [ariaLabel]="i18n.t('practice.submit')"
+            >{{ i18n.t('practice.submit') }}</app-primary-button
+          >
+        </app-glass-panel>
+      }
 
-      <!-- Piano Tutorial Overlay -->
-      <app-piano-tutorial
-        [visible]="showTutorial()"
-        [closeButton]="tutorialCloseButton()"
-        (closed)="closeTutorial()"
+      <!-- Chord exercise -->
+      @if (currentExercise()?.type === 'chord') {
+        <app-glass-panel class="practice__exercise-card">
+          <h2 class="practice__q-label">{{ i18n.t('exercise.chord.question') }}</h2>
+          <button
+            class="practice__play-btn"
+            (click)="playCurrentExercise()"
+            [attr.aria-label]="i18n.t('practice.play.again')"
+          >
+            <mat-icon aria-hidden="true">volume_up</mat-icon>
+            {{ i18n.t('practice.play.again') }}
+          </button>
+          <div class="practice__options-grid practice__options-grid--2col">
+            @for (opt of chordOptions(); track $index) {
+              <button
+                class="practice__option-btn"
+                [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                (click)="selectAnswer(opt)"
+                [attr.aria-label]="chordLabel(opt)"
+                [attr.aria-pressed]="selectedAnswer() === opt"
+              >
+                {{ chordLabel(opt) }}
+              </button>
+            }
+          </div>
+          <app-primary-button
+            [disabled]="selectedAnswer() === null"
+            style="width: 100%"
+            (clicked)="submitAnswer()"
+            [ariaLabel]="i18n.t('practice.submit')"
+            >{{ i18n.t('practice.submit') }}</app-primary-button
+          >
+        </app-glass-panel>
+      }
+
+      <!-- Note-id exercise -->
+      @if (currentExercise()?.type === 'note-id') {
+        <app-glass-panel class="practice__exercise-card practice__exercise-card--note">
+          <h2 class="practice__q-label">{{ i18n.t('exercise.note.question') }}</h2>
+          @if (noteHintKey()) {
+            <p class="practice__note-hint-text">
+              {{ i18n.t('exercise.note.hint') }}
+            </p>
+          } @else {
+            <p class="practice__note-hint-text practice__note-hint-text--find">
+              {{
+                noteIdExploring() ? i18n.t('exercise.note.explore') : i18n.t('exercise.note.find')
+              }}
+            </p>
+          }
+          <button
+            class="practice__play-btn"
+            (click)="playCurrentExercise()"
+            [attr.aria-label]="i18n.t('practice.play.again')"
+          >
+            <mat-icon aria-hidden="true">volume_up</mat-icon>
+            {{ i18n.t('practice.play.again') }}
+          </button>
+          <app-piano-keyboard
+            [highlightedNote]="noteHintKey()"
+            [selectedNote]="null"
+            [disabled]="!!noteHintKey() || showTutorial()"
+            [showKeyboardHints]="true"
+            (noteTapped)="selectNoteAndSubmit($event)"
+          />
+          <!-- Alternativas para resposta -->
+          <div class="practice__note-options">
+            <div class="practice__options-grid practice__options-grid--2col">
+              @for (opt of noteIdOptions(); track opt) {
+                <button
+                  class="practice__option-btn"
+                  [class.practice__option-btn--selected]="selectedAnswer() === opt"
+                  (click)="selectNoteAnswer(opt)"
+                  [attr.aria-label]="'Nota ' + opt"
+                  [attr.aria-pressed]="selectedAnswer() === opt"
+                >
+                  {{ noteLabel(opt) }}
+                </button>
+              }
+            </div>
+          </div>
+          <button class="practice__play-btn practice__play-btn--subtle" (click)="openTutorial()">
+            <mat-icon aria-hidden="true">help_outline</mat-icon>
+            {{ i18n.t('piano.tutorial.help_btn') }}
+          </button>
+        </app-glass-panel>
+      }
+
+      <!-- Melody exercise -->
+      @if (currentExercise()?.type === 'melody') {
+        <app-glass-panel class="practice__exercise-card practice__exercise-card--melody">
+          <!-- FASE LISTEN: ouvir a melodia -->
+          @if (melodyPhase() === 'listen') {
+            <h2 class="practice__q-label">{{ i18n.t('exercise.melody.listen') }}</h2>
+            <div class="practice__melody-notes">
+              @for (n of melodyNotes(); track $index) {
+                <span
+                  class="practice__melody-dot"
+                  [class.practice__melody-dot--active]="melodyHighlightNote() === n.note"
+                  >●</span
+                >
+              }
+            </div>
+            <app-piano-keyboard
+              [highlightedNote]="melodyHighlightNote()"
+              [disabled]="true"
+              [showKeyboardHints]="true"
+            />
+            <div class="practice__melody-actions">
+              <button
+                class="practice__play-btn"
+                (click)="playCurrentExercise()"
+                [attr.aria-label]="i18n.t('practice.play.again')"
+              >
+                <mat-icon aria-hidden="true">volume_up</mat-icon>
+                {{ i18n.t('practice.play.again') }}
+              </button>
+              <app-primary-button
+                style="width: 100%"
+                (clicked)="startMelodyExplore()"
+                [ariaLabel]="i18n.t('exercise.melody.start')"
+              >
+                <mat-icon aria-hidden="true">piano</mat-icon>
+                {{ i18n.t('exercise.melody.start') }}
+              </app-primary-button>
+            </div>
+          }
+
+          <!-- FASE EXPLORE: exploração livre no piano -->
+          @if (melodyPhase() === 'explore') {
+            <h2 class="practice__q-label">{{ i18n.t('exercise.melody.explore') }}</h2>
+            <app-piano-keyboard
+              [disabled]="showTutorial()"
+              [showKeyboardHints]="true"
+              (noteTapped)="tapMelodyNote($event)"
+            />
+            <div class="practice__melody-explore-actions">
+              <button class="practice__play-btn" (click)="melodyBackToListen()">
+                <mat-icon aria-hidden="true">replay</mat-icon>
+                {{ i18n.t('exercise.melody.replay') }}
+              </button>
+              <app-primary-button
+                style="width: 100%"
+                (clicked)="startMelodyRecord()"
+                [ariaLabel]="i18n.t('exercise.melody.record')"
+              >
+                <mat-icon aria-hidden="true">mic</mat-icon>
+                {{ i18n.t('exercise.melody.record') }}
+              </app-primary-button>
+              <button
+                class="practice__play-btn practice__play-btn--subtle"
+                (click)="openTutorial()"
+              >
+                <mat-icon aria-hidden="true">help_outline</mat-icon>
+                {{ i18n.t('piano.tutorial.help_btn') }}
+              </button>
+            </div>
+          }
+
+          <!-- FASE COUNTDOWN: contagem regressiva antes da gravação -->
+          @if (melodyPhase() === 'countdown') {
+            <h2 class="practice__q-label">{{ i18n.t('exercise.melody.recording') }}</h2>
+            <div class="practice__melody-countdown-container">
+              @if (melodyCountdown() >= 0) {
+                <div
+                  class="practice__countdown"
+                  [class.practice__countdown--go]="melodyCountdown() === 0"
+                  [@countdownPop]="melodyCountdown()"
+                >
+                  {{ melodyCountdown() === 0 ? 'GO!' : melodyCountdown() }}
+                </div>
+              }
+            </div>
+            <app-piano-keyboard [disabled]="true" [showKeyboardHints]="true" />
+          }
+
+          <!-- FASE RECORDING: gravação ativa da melodia -->
+          @if (melodyPhase() === 'recording') {
+            <h2 class="practice__q-label practice__q-label--recording">
+              {{ i18n.t('exercise.melody.recording') }}
+            </h2>
+            <div class="practice__melody-progress">
+              @for (n of melodyNotes(); track $index; let i = $index) {
+                <span
+                  class="practice__melody-step"
+                  [class.practice__melody-step--done]="i < melodyStep()"
+                  [class.practice__melody-step--current]="i === melodyStep()"
+                  >{{ n.note.replace(/\d/, '') }}</span
+                >
+              }
+            </div>
+            <app-piano-keyboard
+              [highlightedNote]="melodyExpectedNote()"
+              [wrongNote]="melodyWrongNote()"
+              [disabled]="showTutorial()"
+              [showKeyboardHints]="true"
+              (noteTapped)="tapMelodyNote($event)"
+            />
+            <div class="practice__recording-indicator">
+              <span class="practice__recording-dot"></span>
+              {{ i18n.t('exercise.melody.recording') }}
+            </div>
+          }
+        </app-glass-panel>
+      }
+    </div>
+  }
+
+  <!-- PHASE: feedback -->
+  @if (phase() === 'feedback') {
+    <div class="practice__phase" [@fadeSlide]>
+      <app-glass-panel class="practice__feedback-card" [class.correct]="lastCorrect()">
+        <span class="eyebrow">{{
+          i18n.t(lastCorrect() ? 'practice.feedback.label' : 'practice.feedback.retry')
+        }}</span>
+        <div class="practice__feedback-icon" [@feedback]>
+          <mat-icon aria-hidden="true">{{ lastCorrect() ? 'task_alt' : 'school' }}</mat-icon>
+        </div>
+        <h2 #phaseHeading tabindex="-1" class="practice__feedback-title">
+          {{ lastCorrect() ? i18n.t('practice.correct') : i18n.t('practice.wrong') }}
+        </h2>
+        @if (explanationText()) {
+          <p class="practice__feedback-explanation">
+            {{ explanationText() }}
+          </p>
+        }
+        @if (melodyScore() !== null) {
+          <div
+            class="practice__feedback-score"
+            [class.practice__feedback-score--passed]="lastCorrect()"
+          >
+            {{ i18n.t('exercise.melody.score', { score: melodyScore()! }) }}
+          </div>
+        }
+        @if (!lastCorrect()) {
+          <p class="practice__review-note">{{ i18n.t('journey.review.pending') }}</p>
+        }
+        @if (lastCorrect()) {
+          <div class="practice__feedback-xp">
+            <mat-icon aria-hidden="true">bolt</mat-icon>
+            {{ i18n.t('practice.xp.earned', { xp: lastXpEarned() }) }}
+          </div>
+          @if (combo() > 1) {
+            <p class="practice__combo">
+              <mat-icon aria-hidden="true">local_fire_department</mat-icon
+              >{{ i18n.t('practice.combo.message', { n: combo() }) }}
+            </p>
+          }
+        }
+        <div class="practice__feedback-actions">
+          @if (!lastCorrect()) {
+            <app-primary-button
+              variant="secondary"
+              (clicked)="retry()"
+              [ariaLabel]="i18n.t('practice.retry')"
+              >{{ i18n.t('practice.retry') }}</app-primary-button
+            >
+            <app-primary-button
+              (clicked)="nextExercise()"
+              [ariaLabel]="i18n.t('journey.review.later')"
+            >
+              {{ i18n.t('journey.review.later') }}
+            </app-primary-button>
+          }
+          @if (lastCorrect()) {
+            <app-primary-button (clicked)="nextExercise()">
+              {{
+                isLastExercise() && !reviewQueue().length
+                  ? i18n.t('practice.finish')
+                  : i18n.t('practice.next')
+              }}
+            </app-primary-button>
+          }
+        </div>
+      </app-glass-panel>
+    </div>
+  }
+
+  <!-- PHASE: result -->
+  @if (phase() === 'result') {
+    <div class="practice__phase" [@fadeSlide]>
+      <app-session-result
+        [accuracy]="accuracy()"
+        [xp]="sessionXp()"
+        [mastered]="correctCount()"
+        [total]="lessonSize()"
+        [combo]="bestCombo()"
+        [stars]="sessionStars()"
+        (continued)="goBack()"
       />
     </div>
+  }
+
+  <div class="safe-bottom"></div>
+  @if (exitConfirm()) {
+    <div
+      class="practice__exit"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="exit-title"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+    >
+      <section class="practice__exit-content">
+        <h2 id="exit-title">{{ i18n.t('journey.exit.title') }}</h2>
+        <p>{{ i18n.t('journey.exit.desc') }}</p>
+        <app-primary-button (clicked)="exitConfirm.set(false)">{{
+          i18n.t('journey.stay')
+        }}</app-primary-button>
+        <button class="practice__play-btn" (click)="leavePractice()">
+          {{ i18n.t('journey.leave') }}
+        </button>
+      </section>
+    </div>
+  }
+
+  <!-- Piano Tutorial Overlay -->
+  <app-piano-tutorial
+    [visible]="showTutorial()"
+    [closeButton]="tutorialCloseButton()"
+    (closed)="closeTutorial()"
+  />
+</div>

@@ -1,51 +1,59 @@
+<div class="onboarding">
+  <!-- Skip button -->
+  <button class="onboarding__skip" (click)="finish()" [attr.aria-label]="i18n.t('onboarding.skip')">
+    {{ i18n.t('onboarding.skip') }}
+  </button>
 
-    <div class="onboarding" [style.background]="currentStep().gradient">
-      <!-- Skip button -->
-      <button class="onboarding__skip" (click)="finish()" [attr.aria-label]="i18n.t('onboarding.skip')">
-        {{ i18n.t('onboarding.skip') }}
-      </button>
-
-      <!-- Illustration area -->
-      <div class="onboarding__illustration-area">
-        <div class="onboarding__illustration" [@slideIn]="currentIndex()">
-          <div class="onboarding__glow"></div>
-          <span class="onboarding__emoji">{{ currentStep().illustration }}</span>
-        </div>
-      </div>
-
-      <!-- Card area -->
-      <app-glass-panel class="onboarding__card-wrap" padding="2rem">
-        <div class="onboarding__card" [@slideIn]="currentIndex()">
-          <h1 class="onboarding__title">{{ stepTitle() }}</h1>
-          <p class="onboarding__desc">{{ stepDesc() }}</p>
-        </div>
-
-        <!-- Dots -->
-        <div class="onboarding__dots" [attr.aria-label]="i18n.t('onboarding.aria.step', { n: currentIndex() + 1, total: steps.length })">
-          @for (s of steps; track $index; let idx = $index) {
-            <button
-              class="onboarding__dot"
-              [class.onboarding__dot--active]="idx === currentIndex()"
-              [attr.aria-label]="'Passo ' + (idx + 1)"
-              (click)="goTo(idx)"
-            ></button>
-          }
-        </div>
-
-        <!-- Actions -->
-        <div class="onboarding__actions">
-          @if (!isLast()) {
-            <app-primary-button
-              (clicked)="next()"
-              [ariaLabel]="i18n.t('onboarding.next')"
-            >{{ i18n.t('onboarding.next') }}</app-primary-button>
-          } @else {
-            <app-primary-button
-              size="lg"
-              (clicked)="finish()"
-              [ariaLabel]="i18n.t('onboarding.cta')"
-            >{{ i18n.t('onboarding.cta') }}</app-primary-button>
-          }
-        </div>
-      </app-glass-panel>
+  <!-- Illustration area -->
+  <div class="onboarding__illustration-area">
+    <div class="onboarding__illustration" [@slideIn]="currentIndex()">
+      <div class="onboarding__glow"></div>
+      <mat-icon class="onboarding__emoji" aria-hidden="true">{{
+        currentStep().illustration
+      }}</mat-icon>
     </div>
+  </div>
+
+  <!-- Card area -->
+  <app-glass-panel class="onboarding__card-wrap" padding="2rem">
+    <div class="onboarding__card" [@slideIn]="currentIndex()">
+      <span class="eyebrow"
+        >DuoMusic ·
+        {{ i18n.t('onboarding.aria.step', { n: currentIndex() + 1, total: steps.length }) }}</span
+      >
+      <h1 class="onboarding__title">{{ stepTitle() }}</h1>
+      <p class="onboarding__desc">{{ stepDesc() }}</p>
+    </div>
+
+    <!-- Dots -->
+    <div
+      class="onboarding__dots"
+      [attr.aria-label]="
+        i18n.t('onboarding.aria.step', { n: currentIndex() + 1, total: steps.length })
+      "
+    >
+      @for (s of steps; track $index; let idx = $index) {
+        <button
+          class="onboarding__dot"
+          [class.onboarding__dot--active]="idx === currentIndex()"
+          [attr.aria-current]="idx === currentIndex() ? 'step' : null"
+          [attr.aria-label]="'Passo ' + (idx + 1)"
+          (click)="goTo(idx)"
+        ></button>
+      }
+    </div>
+
+    <!-- Actions -->
+    <div class="onboarding__actions">
+      @if (!isLast()) {
+        <app-primary-button (clicked)="next()" [ariaLabel]="i18n.t('onboarding.next')">{{
+          i18n.t('onboarding.next')
+        }}</app-primary-button>
+      } @else {
+        <app-primary-button size="lg" (clicked)="finish()" [ariaLabel]="i18n.t('onboarding.cta')">{{
+          i18n.t('onboarding.cta')
+        }}</app-primary-button>
+      }
+    </div>
+  </app-glass-panel>
+</div>

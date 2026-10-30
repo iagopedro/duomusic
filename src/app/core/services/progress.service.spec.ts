@@ -75,7 +75,7 @@ describe('ProgressService', () => {
 
   it('recordResult should add XP and persist', () => {
     service.recordResult(makeResult({ xpEarned: 10 }));
-    expect(service.xp()).toBe(10);
+    expect(service.xp()).toBe(30);
     expect(storageSetSpy).toHaveBeenCalled();
   });
 
@@ -83,13 +83,13 @@ describe('ProgressService', () => {
     for (let i = 0; i < 10; i++) {
       service.recordResult(makeResult({ exerciseId: `r-${i}`, xpEarned: 10 }));
     }
-    expect(service.xp()).toBe(100);
+    expect(service.xp()).toBe(150);
     expect(service.level()).toBe(2);
   });
 
   it('xpInCurrentLevel should track XP within current level', () => {
     service.recordResult(makeResult({ xpEarned: 50 }));
-    expect(service.xpInCurrentLevel()).toBe(50);
+    expect(service.xpInCurrentLevel()).toBe(70);
   });
 
   it('xpForNextLevel should be 100', () => {
@@ -163,5 +163,24 @@ describe('ProgressService', () => {
 
   it('getDailyMissions should return an array', () => {
     expect(Array.isArray(service.getDailyMissions())).toBe(true);
+  });
+
+  it('credits mission rewards once, including the five-exercise mission', () => {
+    for (let attempt = 0; attempt < 5; attempt++) service.recordResult(makeResult({ xpEarned: 0 }));
+    expect(service.xp()).toBe(50);
+    service.recordResult(makeResult({ xpEarned: 0 }));
+    expect(service.xp()).toBe(50);
+  });
+
+  it('requires minimum XP and rechecks unlocks after a completed module', () => {
+    const fundamentals = MODULES.find(module => module.id === 'fundamentals')!;
+    const api = TestBed.inject(ApiService);
+    const modules = api.modules as ReturnType<typeof signal<typeof MODULES>>;
+    modules.set(MODULES.map(module => module.id === 'intervals' ? { ...module, minXpToUnlock: 200 } : module));
+    for (const exerciseId of fundamentals.exerciseIds) service.recordResult(makeResult({ exerciseId, xpEarned: 0 }));
+    expect(service.isModuleCompleted('fundamentals')).toBe(true);
+    expect(service.isModuleUnlocked('intervals')).toBe(false);
+    service.recordResult(makeResult({ exerciseId: 'free-training', xpEarned: 150 }));
+    expect(service.isModuleUnlocked('intervals')).toBe(true);
   });
 });

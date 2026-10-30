@@ -1,10 +1,14 @@
-
-    <div
-      class="badge-chip"
-      [class.badge-chip--locked]="locked()"
-      [attr.aria-label]="achievement().titleKey + (locked() ? ' — bloqueado' : ' — conquistado')"
-      role="img"
-    >
-      <span class="badge-chip__icon" [attr.aria-hidden]="true">{{ achievement().icon }}</span>
-      <span class="badge-chip__name">{{ achievement().titleKey }}</span>
-    </div>
+<div
+  class="badge-chip"
+  [class.badge-chip--locked]="locked()"
+  [class.badge-chip--detailed]="detailed()"
+  [attr.aria-label]="achievement().titleKey + (locked() ? ' — bloqueado' : ' — conquistado')"
+  role="group"
+>
+  <span class="badge-chip__icon" [attr.aria-hidden]="true">{{ achievement().icon }}</span>
+  <span class="badge-chip__name">{{ achievement().titleKey }}</span>
+  @if (detailed()) {
+    <span class="badge-chip__description">{{ achievement().descriptionKey }}</span>
+    <span class="badge-chip__status">{{ locked() ? 'A conquistar' : 'Conquistado' }}</span>
+  }
+</div>

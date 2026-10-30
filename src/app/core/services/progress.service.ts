@@ -64,6 +64,7 @@ export class ProgressService {
   }
 
   recordResult(result: ExerciseResult): void {
+    this.refreshDailyMissions();
     this._progress.update(p => {
       const history = [...p.exerciseHistory, result];
       const xp = p.xp + result.xpEarned;
@@ -79,9 +80,9 @@ export class ProgressService {
     });
 
     this.updateStreak();
+    this.updateDailyMissions(result);
     this.checkModuleCompletion(result.moduleId);
     this.checkAchievements();
-    this.updateDailyMissions(result);
     this.save();
   }
 
@@ -137,21 +138,19 @@ export class ProgressService {
     const module = modules.find(m => m.id === moduleId);
     if (!module) return;
     const p = this._progress();
-    if (p.completedModuleIds.includes(moduleId)) return;
-
     const exercisesDone = new Set(
       p.exerciseHistory.filter(r => r.correct && r.moduleId === moduleId).map(r => r.exerciseId)
     );
-    const allDone = module.exerciseIds.every(id => exercisesDone.has(id));
-    if (!allDone) return;
-
-    // Marca módulo como concluído e desbloqueia o próximo
+    const allDone = module.exerciseIds.length > 0 && module.exerciseIds.every(id => exercisesDone.has(id));
     this._progress.update(prev => {
-      const completedModuleIds = [...prev.completedModuleIds, moduleId];
-      const nextModule = modules.find(m => m.requiredModuleId === moduleId);
-      const unlockedModuleIds = nextModule
-        ? [...prev.unlockedModuleIds, nextModule.id]
-        : prev.unlockedModuleIds;
+      const completedModuleIds = allDone && !prev.completedModuleIds.includes(moduleId)
+        ? [...prev.completedModuleIds, moduleId] : prev.completedModuleIds;
+      const unlockedModuleIds = [...new Set([
+        ...prev.unlockedModuleIds,
+        ...modules.filter(candidate => prev.xp >= candidate.minXpToUnlock &&
+          (!candidate.requiredModuleId || completedModuleIds.includes(candidate.requiredModuleId)))
+          .map(candidate => candidate.id),
+      ])];
       return { ...prev, completedModuleIds, unlockedModuleIds };
     });
   }
@@ -243,7 +242,10 @@ export class ProgressService {
         }
         return m;
       });
-      return { ...p, dailyMissions: missions };
+      const bonus = missions.reduce((total, mission, index) =>
+        total + (mission.completed && !p.dailyMissions[index].completed ? mission.xpReward : 0), 0);
+      const xp = p.xp + bonus;
+      return { ...p, dailyMissions: missions, xp, level: Math.floor(xp / XP_PER_LEVEL) + 1 };
     });
   }
 

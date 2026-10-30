@@ -195,7 +195,7 @@ export const EXERCISES: Exercise[] = [
     conceptKey: 'exercise.note.title',
     questionKey: 'exercise.note.question',
     explanationKey: 'exercise.note.desc',
-    noteFreq: st(3),   // G4
+    noteFreq: G4,
     noteName: 'G4',
     showHint: true,
   } as NoteExercise,

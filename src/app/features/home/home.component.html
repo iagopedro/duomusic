@@ -1,15 +1,191 @@
+<div class="home page-scroll">
+  <header class="home__header">
+    <div>
+      <span class="eyebrow">DuoMusic · {{ i18n.t('home.studio') }}</span>
+      <h1 class="page-heading">{{ i18n.t('home.title') }}</h1>
+      <p class="page-description">{{ i18n.t('home.subtitle') }}</p>
+    </div>
+    <div class="home__quick-stats">
+      <span class="home__level-pill">
+        <mat-icon aria-hidden="true">workspace_premium</mat-icon>
+        {{ i18n.t('home.level', { n: level() }) }}
+      </span>
+      <span class="home__streak">
+        <mat-icon aria-hidden="true">local_fire_department</mat-icon>
+        {{ i18n.t('home.streak', { n: streak() }) }}
+      </span>
+    </div>
+  </header>
 
-    <div class="home page-scroll">
-      <!-- Header / Level card -->
-      <app-glass-panel class="home__hero" padding="1.5rem">
-        <div class="home__greeting">{{ i18n.t('home.greeting') }}</div>
-        <div class="home__level-row">
-          <div class="home__level-badge">
-            <span class="home__level-label">{{ i18n.t('home.level', { n: level() }) }}</span>
+  <section class="home__hero" aria-labelledby="next-title">
+    <div class="home__hero-content">
+      <span class="eyebrow">{{ i18n.t('home.next') }}</span>
+      <h2 id="next-title">{{ i18n.t('home.hero.title') }}</h2>
+      <p>{{ i18n.t('home.hero.desc') }}</p>
+      @if (totalLessons() > 0) {
+        <div class="home__hero-progress">
+          <span>{{
+            i18n.t('home.lessons.progress', { n: completedLessons(), total: totalLessons() })
+          }}</span>
+          <app-xp-bar
+            [current]="completedLessons()"
+            [max]="totalLessons()"
+            [ariaLabel]="
+              i18n.t('home.lessons.progress', { n: completedLessons(), total: totalLessons() })
+            "
+          />
+        </div>
+      }
+      @if (nextStop(); as next) {
+        <div class="home__next-meta">
+          <span
+            >{{ i18n.tStr(next.module.nameKey) }} ·
+            {{ i18n.t('journey.lesson.label', { n: next.lesson.index + 1 }) }}</span
+          >
+          <span class="home__reward"
+            ><mat-icon aria-hidden="true">bolt</mat-icon>{{ lessonReward(next.lesson) }} XP</span
+          >
+        </div>
+      }
+      <app-primary-button
+        size="lg"
+        [sweep]="true"
+        (clicked)="continuePractice()"
+        [disabled]="!modules().length"
+        class="home__cta"
+      >
+        <mat-icon aria-hidden="true">play_arrow</mat-icon>
+        {{ i18n.t('home.cta') }}
+        <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+      </app-primary-button>
+      <span class="home__hero-note"
+        ><mat-icon aria-hidden="true">all_inclusive</mat-icon>{{ i18n.t('home.no-lives') }}</span
+      >
+    </div>
+    <div class="home__sound-art" aria-hidden="true">
+      <div class="home__orbit"></div>
+      <div class="home__record">
+        <span><mat-icon>music_note</mat-icon></span>
+      </div>
+      <div class="home__sound-wave">
+        @for (bar of [1, 2, 3, 4, 5, 6, 7, 8, 9]; track bar) {
+          <i [style.--bar]="bar"></i>
+        }
+      </div>
+      <span class="home__art-note home__art-note--one">♪</span>
+      <span class="home__art-note home__art-note--two">♫</span>
+    </div>
+  </section>
+
+  <div class="home__journey-layout">
+    <section class="home__path" aria-labelledby="path-title">
+      <div class="home__section-heading">
+        <div>
+          <h2 id="path-title" class="home__section-title">{{ i18n.t('journey.path.title') }}</h2>
+          <p>{{ i18n.t('home.path.desc') }}</p>
+        </div>
+        <span class="home__path-count"
+          >{{ completedLessons() }}/{{ totalLessons() }}
+          <span class="sr-only">{{ i18n.t('home.lessons.done') }}</span
+          ><mat-icon aria-hidden="true">flag</mat-icon></span
+        >
+      </div>
+      @for (unit of path(); track unit.module.id; let unitIndex = $index) {
+        <details
+          class="home__unit"
+          [attr.data-unit]="unit.module.id"
+          [class.home__unit--locked]="!isUnlocked(unit.module)"
+          [open]="isUnlocked(unit.module)"
+        >
+          <summary class="home__unit-header">
+            <span class="home__unit-icon"
+              ><mat-icon aria-hidden="true">{{ unit.module.icon }}</mat-icon></span
+            >
+            <span class="home__unit-name">
+              <span class="eyebrow">{{ i18n.t('journey.path.unit', { n: unitIndex + 1 }) }}</span>
+              <span class="home__unit-title">{{ i18n.tStr(unit.module.nameKey) }}</span>
+            </span>
+            <mat-icon aria-hidden="true">{{
+              isCompleted(unit.module)
+                ? 'verified'
+                : !isUnlocked(unit.module)
+                  ? 'lock_outline'
+                  : 'expand_more'
+            }}</mat-icon>
+            <span class="sr-only">{{
+              i18n.t(
+                isCompleted(unit.module)
+                  ? 'journey.path.completed'
+                  : isUnlocked(unit.module)
+                    ? 'home.modules.unlocked'
+                    : 'journey.path.locked'
+              )
+            }}</span>
+          </summary>
+          <div class="home__unit-body">
+            <p class="home__unit-desc">{{ unit.module.description }}</p>
+            @if (!isUnlocked(unit.module)) {
+              <p class="home__requirement">{{ requirement(unit.module) }}</p>
+            }
+            <ol class="home__lesson-path">
+              @for (lesson of unit.lessons; track lesson.index) {
+                <li
+                  [class.home__lesson--done]="lesson.completed"
+                  [class.home__lesson--current]="lesson.unlocked && !lesson.completed"
+                >
+                  <button
+                    class="home__lesson-node"
+                    [disabled]="!lesson.unlocked"
+                    (click)="openLesson(unit.module, lesson)"
+                    [attr.aria-label]="
+                      i18n.tStr(unit.module.nameKey) +
+                      ': ' +
+                      i18n.t('journey.lesson.label', { n: lesson.index + 1 })
+                    "
+                    [attr.aria-describedby]="'lesson-' + unit.module.id + '-' + lesson.index"
+                    [attr.aria-current]="lesson.unlocked && !lesson.completed ? 'step' : null"
+                  >
+                    <mat-icon aria-hidden="true">{{
+                      lesson.completed ? 'check' : lesson.unlocked ? 'play_arrow' : 'lock_outline'
+                    }}</mat-icon>
+                  </button>
+                  <div class="home__lesson-copy">
+                    <strong>{{ i18n.t('journey.lesson.label', { n: lesson.index + 1 }) }}</strong>
+                    <span [id]="'lesson-' + unit.module.id + '-' + lesson.index">{{
+                      i18n.t(
+                        lesson.completed
+                          ? 'journey.path.completed'
+                          : lesson.unlocked
+                            ? 'journey.path.current'
+                            : 'journey.path.locked'
+                      )
+                    }}</span>
+                    @if (lesson.unlocked) {
+                      <small>{{
+                        i18n.t('home.lesson.content', { n: lesson.exercises.length })
+                      }}</small>
+                    }
+                  </div>
+                  <span class="home__lesson-reward">{{ lessonReward(lesson) }} XP</span>
+                </li>
+              }
+            </ol>
           </div>
-          <div class="home__streak" [attr.aria-label]="i18n.t('home.streak.label')">
-            <mat-icon aria-hidden="true">local_fire_department</mat-icon>
-            <span>{{ i18n.t('home.streak', { n: streak() }) }}</span>
+        </details>
+      }
+    </section>
+
+    <aside class="home__sidebar">
+      <section class="home__level-card" aria-labelledby="level-title">
+        <div class="home__section-heading">
+          <span class="home__level-icon"
+            ><mat-icon aria-hidden="true">workspace_premium</mat-icon></span
+          >
+          <div>
+            <span class="eyebrow">{{ i18n.t('home.your-progress') }}</span>
+            <h2 id="level-title" class="home__section-title">
+              {{ i18n.t('home.level', { n: level() }) }}
+            </h2>
           </div>
         </div>
         <app-xp-bar
@@ -18,79 +194,90 @@
           [showLabels]="true"
           [ariaLabel]="i18n.t('home.xp.next', { xp: xpForNext() - xpInLevel() })"
         />
-        <div class="home__xp-hint">
-          {{ i18n.t('home.xp.next', { xp: xpForNext() - xpInLevel() }) }}
-        </div>
-        <app-primary-button
-          size="lg"
-          [sweep]="true"
-          (clicked)="continuePractice()"
-          class="home__cta"
-          [ariaLabel]="i18n.t('home.cta')"
-        >
-          <svg class="home__cta-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M8 5.14v13.72c0 .93 1.01 1.52 1.82 1.06l11.06-6.86c.78-.44.78-1.68 0-2.12L9.82 4.08C9.01 3.62 8 4.21 8 5.14z"/>
-          </svg>
-          {{ i18n.t('home.cta') }}
-        </app-primary-button>
-      </app-glass-panel>
+        <p class="home__xp-hint">{{ i18n.t('home.xp.next', { xp: xpForNext() - xpInLevel() }) }}</p>
+      </section>
 
-      <!-- Daily Missions -->
       @if (missions().length) {
-        <section class="home__section">
-          <h2 class="home__section-title">{{ i18n.t('home.missions.title') }}</h2>
+        <section class="home__section" aria-labelledby="missions-title">
+          <div class="home__section-heading">
+            <h2 id="missions-title" class="home__section-title">
+              {{ i18n.t('home.missions.title') }}
+            </h2>
+            <span class="home__count">{{ completedMissions() }}/{{ missions().length }}</span>
+          </div>
+          <p class="home__section-desc">{{ i18n.t('home.missions.desc') }}</p>
           <div class="home__missions-list">
             @for (m of missions(); track m.id) {
-              <app-glass-panel
-                class="home__mission"
-                padding="0.875rem 1rem"
-              >
+              <app-glass-panel padding="1rem" class="home__mission">
                 <div class="home__mission-inner">
-                  <mat-icon class="home__mission-icon" [class.done]="m.completed">
-                    {{ m.completed ? 'check_circle' : 'radio_button_unchecked' }}
-                  </mat-icon>
-                  <div class="home__mission-text">
-                    <span class="home__mission-desc">{{ m.descriptionKey }}</span>
-                    <span class="home__mission-progress">{{ m.current }}/{{ m.target }}</span>
-                  </div>
-                  <span class="home__mission-xp">+{{ m.xpReward }} XP</span>
+                  <mat-icon
+                    class="home__mission-icon"
+                    [class.done]="m.completed"
+                    aria-hidden="true"
+                    >{{ m.completed ? 'check_circle' : 'outlined_flag' }}</mat-icon
+                  >
+                  <span class="home__mission-desc">{{ m.descriptionKey }}</span>
+                  <span class="home__mission-xp">{{
+                    m.completed ? i18n.t('journey.mission.earned') : '+' + m.xpReward + ' XP'
+                  }}</span>
                 </div>
+                <app-xp-bar [current]="m.current" [max]="m.target" [ariaLabel]="m.descriptionKey" />
+                <span class="home__mission-progress">{{ m.current }}/{{ m.target }}</span>
               </app-glass-panel>
             }
           </div>
         </section>
       }
 
-      <!-- Recent badges -->
+      @if (reviewModule()) {
+        <section class="home__review">
+          <mat-icon aria-hidden="true">psychology</mat-icon>
+          <h2 class="home__section-title">{{ i18n.t('home.review.title') }}</h2>
+          <p>{{ i18n.t('home.review.desc') }}</p>
+          <app-primary-button variant="secondary" (clicked)="startReview()">
+            <mat-icon aria-hidden="true">replay</mat-icon
+            >{{ i18n.t('journey.review.start', { module: reviewName() }) }}
+          </app-primary-button>
+        </section>
+      }
+
+      <section id="free-practice" class="home__section home__free">
+        <div class="home__section-heading">
+          <span class="home__free-icon"><mat-icon aria-hidden="true">piano</mat-icon></span>
+          <h2 class="home__section-title">{{ i18n.t('journey.free') }}</h2>
+        </div>
+        <p class="home__section-desc">{{ i18n.t('home.free.desc') }}</p>
+        <label for="free-module">{{ i18n.t('home.modules.title') }}</label>
+        <select
+          id="free-module"
+          #freeSelect
+          [value]="freeModule()"
+          (change)="selectFreeModule(freeSelect.value)"
+        >
+          @for (module of modules(); track module.id) {
+            <option [value]="module.id">{{ i18n.tStr(module.nameKey) }}</option>
+          }
+        </select>
+        <app-primary-button
+          variant="secondary"
+          (clicked)="startFreePractice()"
+          [disabled]="!modules().length"
+        >
+          <mat-icon aria-hidden="true">shuffle</mat-icon>{{ i18n.t('journey.free.start') }}
+        </app-primary-button>
+      </section>
+
       @if (recentBadges().length) {
         <section class="home__section">
           <h2 class="home__section-title">{{ i18n.t('home.badges.title') }}</h2>
           <div class="home__badges-row">
             @for (b of recentBadges(); track b.id) {
-              <app-badge-chip
-                [achievement]="b"
-                [locked]="false"
-              />
+              <app-badge-chip [achievement]="b" [locked]="false" />
             }
           </div>
         </section>
       }
-
-      <!-- Modules list -->
-      <section class="home__section">
-        <h2 class="home__section-title">{{ i18n.t('home.modules.title') }}</h2>
-        <div class="home__modules-list">
-          @for (mod of modules(); track mod.id) {
-            <app-module-card
-              [module]="mod"
-              [locked]="!isUnlocked(mod)"
-              [completed]="isCompleted(mod)"
-              (cardClicked)="openModule($event)"
-            />
-          }
-        </div>
-      </section>
-
-      <!-- Safe area bottom spacer -->
-      <div class="safe-bottom"></div>
-    </div>
+    </aside>
+  </div>
+  <div class="safe-bottom"></div>
+</div>

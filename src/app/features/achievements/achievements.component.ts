@@ -1,13 +1,15 @@
 import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { ApiService } from '../../core/services/api.service';
 import { BadgeChipComponent } from '../../shared/components/badge-chip/badge-chip.component';
 import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-panel.component';
+import { XpBarComponent } from '../../shared/components/xp-bar/xp-bar.component';
 
 @Component({
   selector: 'app-achievements',
-  imports: [BadgeChipComponent, GlassPanelComponent],
+  imports: [MatIconModule, BadgeChipComponent, GlassPanelComponent, XpBarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './achievements.component.html',
   styleUrl: './achievements.component.scss',
@@ -21,7 +23,9 @@ export class AchievementsComponent {
 
   readonly earnedCount = computed(() => this.progress.earnedAchievementIds().length);
   readonly total = computed(() => this.api.achievements().length);
-  readonly percentage = computed(() => (this.earnedCount() / this.total()) * 100);
+  readonly percentage = computed(() =>
+    this.total() ? (this.earnedCount() / this.total()) * 100 : 0,
+  );
 
   isEarned(id: string): boolean {
     return this.progress.earnedAchievementIds().includes(id);

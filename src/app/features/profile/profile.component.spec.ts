@@ -52,6 +52,20 @@ describe('ProfileComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('names the actual switch controls for screen readers', () => {
+    const fixture = TestBed.createComponent(ProfileComponent);
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+    const switches = [...host.querySelectorAll('[role="switch"]')];
+    expect(switches.map((control) => control.getAttribute('aria-label'))).toEqual([
+      'Reduzir animações',
+      'Tema escuro',
+    ]);
+    expect(host.querySelector('input[type="range"]')?.getAttribute('aria-label')).toBe(
+      'Volume do áudio',
+    );
+  });
+
   it('accuracy should reflect progress service', () => {
     expect(component.accuracy()).toBe(85);
   });

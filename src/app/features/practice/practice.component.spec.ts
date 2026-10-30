@@ -35,7 +35,11 @@ function makeBgTrackSpy() {
 }
 
 function makeProgressSpy() {
-  return { recordResult: vi.fn() };
+  return {
+    recordResult: vi.fn(),
+    progress: signal({ exerciseHistory: [] }),
+    isModuleUnlocked: () => true,
+  };
 }
 
 function makeApiSpy() {
@@ -46,25 +50,28 @@ function makeApiSpy() {
     exercises: exercisesSignal,
     achievements: signal([]),
     getExercisesForModule: vi.fn().mockImplementation((moduleId: string) => {
-      const mod = MODULES.find(m => m.id === moduleId);
+      const mod = MODULES.find((m) => m.id === moduleId);
       if (!mod) return [];
-      return EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
+      return EXERCISES.filter((e) => mod.exerciseIds.includes(e.id));
     }),
     generateExercises: vi.fn().mockImplementation(async (moduleId: string) => {
-      const mod = MODULES.find(m => m.id === moduleId);
+      const mod = MODULES.find((m) => m.id === moduleId);
       if (!mod) return [];
-      return EXERCISES.filter(e => mod.exerciseIds.includes(e.id));
+      return EXERCISES.filter((e) => mod.exerciseIds.includes(e.id));
     }),
   };
 }
 
-function makeRoute(moduleId: string) {
+function makeRoute(moduleId: string, free = true) {
   return {
-    snapshot: { paramMap: { get: vi.fn().mockReturnValue(moduleId) } },
+    snapshot: {
+      paramMap: { get: vi.fn().mockReturnValue(moduleId) },
+      queryParamMap: { get: (key: string) => (key === 'mode' && free ? 'free' : null) },
+    },
   };
 }
 
-async function createFixture(moduleId: string) {
+async function createFixture(moduleId: string, free = true) {
   const audioSpy = makeAudioSpy();
   const progressSpy = makeProgressSpy();
   const bgTrackSpy = makeBgTrackSpy();
@@ -79,7 +86,7 @@ async function createFixture(moduleId: string) {
       { provide: ProgressService, useValue: progressSpy },
       { provide: BackgroundTrackService, useValue: bgTrackSpy },
       { provide: ApiService, useValue: apiSpy },
-      { provide: ActivatedRoute, useValue: makeRoute(moduleId) },
+      { provide: ActivatedRoute, useValue: makeRoute(moduleId, free) },
       { provide: Router, useValue: routerSpy },
     ],
   }).compileComponents();
@@ -88,7 +95,15 @@ async function createFixture(moduleId: string) {
   fixture.detectChanges();
   await fixture.whenStable();
 
-  return { fixture, component: fixture.componentInstance, audioSpy, progressSpy, bgTrackSpy, apiSpy, routerSpy };
+  return {
+    fixture,
+    component: fixture.componentInstance,
+    audioSpy,
+    progressSpy,
+    bgTrackSpy,
+    apiSpy,
+    routerSpy,
+  };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -96,6 +111,76 @@ async function createFixture(moduleId: string) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('PracticeComponent — init', () => {
+  it('presents each practical exercise and theory with a consistent heading', async () => {
+    const { component } = await createFixture('fundamentals', false);
+    for (const type of ['note-id', 'rhythm', 'interval', 'chord', 'melody'] as const) {
+      const exercise = EXERCISES.find((exercise) => exercise.type === type)!;
+      component.exercises.set([exercise]);
+      expect(component.exercisePresentation()?.icon).toBeTruthy();
+      expect(component.exercisePresentation()?.label).toMatch(/^exercise\./);
+    }
+  });
+
+  it('shows audio activity only for the scheduled playback duration', async () => {
+    const { component, fixture } = await createFixture('intervals');
+    vi.useFakeTimers();
+    try {
+      component.playCurrentExercise();
+      await Promise.resolve();
+      expect(component.playbackActive()).toBe(true);
+      vi.advanceTimersByTime(1949);
+      expect(component.playbackActive()).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect(component.playbackActive()).toBe(false);
+      component.playCurrentExercise();
+      await Promise.resolve();
+      fixture.destroy();
+      expect(component.playbackActive()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clears the audio indicator when an answer is evaluated', async () => {
+    const { component } = await createFixture('intervals');
+    component.startPractice();
+    component.playCurrentExercise();
+    await Promise.resolve();
+    expect(component.playbackActive()).toBe(true);
+    const exercise = component.currentExercise();
+    if (exercise?.type !== 'interval') throw new Error('Expected an interval exercise');
+    component.selectAnswer(exercise.semitones);
+    component.submitAnswer();
+    expect(component.playbackActive()).toBe(false);
+  });
+  it('loads a short curriculum lesson with theory without calling the generator', async () => {
+    const { component, apiSpy } = await createFixture('fundamentals', false);
+    expect(component.exercises()).toHaveLength(4);
+    expect(component.exercises()[1].type).toBe('theory');
+    expect(component.exercises()[0].id).toBe('n-1');
+    expect(apiSpy.generateExercises).not.toHaveBeenCalled();
+  });
+
+  it('evaluates theory and exposes its musical explanation', async () => {
+    const { component } = await createFixture('scales', false);
+    component.startPractice();
+    component.currentIndex.set(1);
+    const exercise = component.theoryExercise()!;
+    component.selectAnswer(exercise.answer);
+    component.submitAnswer();
+    expect(component.lastCorrect()).toBe(true);
+    expect(component.explanationText()).toBe(exercise.explanationKey);
+  });
+
+  it('asks before leaving an active session', async () => {
+    const { component, routerSpy } = await createFixture('intervals');
+    component.startPractice();
+    component.goBack();
+    expect(component.exitConfirm()).toBe(true);
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+    component.leavePractice();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/home']);
+  });
   it('should create with fundamentals module', async () => {
     const { component } = await createFixture('fundamentals');
     expect(component).toBeTruthy();
@@ -104,7 +189,7 @@ describe('PracticeComponent — init', () => {
   it('should load exercises for the given moduleId', async () => {
     const { component } = await createFixture('fundamentals');
     expect(component.exercises().length).toBeGreaterThan(0);
-    expect(component.exercises().every(e => e.moduleId === 'fundamentals')).toBe(true);
+    expect(component.exercises().every((e) => e.moduleId === 'fundamentals')).toBe(true);
   });
 
   it('should start in intro phase', async () => {
@@ -129,6 +214,87 @@ describe('PracticeComponent — init', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('PracticeComponent — navigation flow', () => {
+  it('keeps correct feedback visible until the learner chooses to continue', async () => {
+    const { component } = await createFixture('intervals');
+    vi.useFakeTimers();
+    try {
+      component.startPractice();
+      const exercise = component.currentExercise();
+      if (exercise?.type !== 'interval') throw new Error('Expected interval');
+      component.selectAnswer(exercise.semitones);
+      component.submitAnswer();
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(component.phase()).toBe('feedback');
+      expect(component.currentIndex()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not let generated or fallback free exercises complete the curriculum', async () => {
+    const { component } = await createFixture('fundamentals');
+    expect(
+      component
+        .exercises()
+        .filter((exercise) => exercise.type !== 'theory')
+        .every((exercise) => exercise.id.startsWith('free-')),
+    ).toBe(true);
+  });
+
+  it('adapts rhythm approval to the selected experience mode', async () => {
+    const { component } = await createFixture('fundamentals');
+    component.selectMode('guided');
+    component.startPractice();
+    component.rhythmBeatStatus.set(['hit', 'hit', 'hit', 'miss']);
+    component['evaluateRhythm']();
+    expect(component.lastCorrect()).toBe(true);
+    component.mode.set('challenge');
+    component.phase.set('exercise');
+    component.rhythmBeatStatus.set(['hit', 'hit', 'hit', 'miss']);
+    component['evaluateRhythm']();
+    expect(component.lastCorrect()).toBe(false);
+  });
+
+  it('reviews missed exercises before finishing and awards XP only on success', async () => {
+    const { component, progressSpy } = await createFixture('intervals');
+    const exercise = component.exercises().find((exercise) => exercise.type === 'interval')!;
+    if (exercise.type !== 'interval') throw new Error('Expected interval fixture');
+    component.exercises.set([exercise]);
+    component.startPractice();
+    component.selectAnswer(-1);
+    component.submitAnswer();
+    expect(component.reviewQueue()).toEqual([exercise]);
+    expect(component.combo()).toBe(0);
+    component.nextExercise();
+    expect(component.reviewing()).toBe(true);
+    expect(component.phase()).toBe('exercise');
+    component.selectAnswer(exercise.semitones);
+    component.submitAnswer();
+    component.submitAnswer();
+    expect(progressSpy.recordResult).toHaveBeenCalledTimes(2);
+    expect(component.sessionXp()).toBe(exercise.xpReward);
+    expect(component.accuracy()).toBe(50);
+    expect(component.bestCombo()).toBe(1);
+    component.nextExercise();
+    expect(component.phase()).toBe('result');
+  });
+
+  it('removes an error from the review queue after an immediate successful retry', async () => {
+    const { component } = await createFixture('intervals');
+    const exercise = component.exercises().find((exercise) => exercise.type === 'interval')!;
+    if (exercise.type !== 'interval') throw new Error('Expected interval fixture');
+    component.exercises.set([exercise]);
+    component.startPractice();
+    component.selectAnswer(-1);
+    component.submitAnswer();
+    component.retry();
+    component.selectAnswer(exercise.semitones);
+    component.submitAnswer();
+    expect(component.reviewQueue()).toEqual([]);
+    component.nextExercise();
+    expect(component.phase()).toBe('result');
+  });
+
   it('startPractice() should transition to exercise phase', async () => {
     const { component } = await createFixture('fundamentals');
     component.startPractice();
@@ -320,7 +486,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     component.startPractice();
     component.handleTap();
     // rhythmExpectedTimes está vazio até startRhythm() ser executado, nenhum beat é marcado
-    expect(component.tappedBeats().some(b => b)).toBe(false);
+    expect(component.tappedBeats().some((b) => b)).toBe(false);
   });
 
   it('handleTap() should set tapping=true briefly', async () => {
@@ -385,9 +551,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     const ex = component.currentExercise() as any;
 
     // Simula que todos os beats não-rest foram acertados
-    const statuses = ex.pattern.map((note: string) =>
-      note === 'rest' ? 'pending' : 'hit'
-    );
+    const statuses = ex.pattern.map((note: string) => (note === 'rest' ? 'pending' : 'hit'));
     component.rhythmBeatStatus.set(statuses);
     component.rhythmExtraTaps.set(0);
 
@@ -420,9 +584,7 @@ describe('PracticeComponent — rhythm exercise', () => {
     const ex = component.currentExercise() as any;
 
     // Todos beats acertados mas com toques extras
-    const statuses = ex.pattern.map((note: string) =>
-      note === 'rest' ? 'pending' : 'hit'
-    );
+    const statuses = ex.pattern.map((note: string) => (note === 'rest' ? 'pending' : 'hit'));
     component.rhythmBeatStatus.set(statuses);
     component.rhythmExtraTaps.set(3);
 
@@ -592,7 +754,7 @@ describe('PracticeComponent — note-id free exploration', () => {
     component.startPractice();
     // Avança até encontrar um exercício note-id
     while (component.currentExercise()?.type !== 'note-id' && !component.isLastExercise()) {
-      component.currentIndex.update(i => i + 1);
+      component.currentIndex.update((i) => i + 1);
       component['resetExerciseState']();
     }
     return result;
@@ -653,7 +815,7 @@ describe('PracticeComponent — note-id free exploration', () => {
   it('noteIdOptions should not have duplicate labels (e.g. C4 and C5 both showing "C")', async () => {
     const { component } = await createNoteFixture();
     if (component.currentExercise()?.type !== 'note-id') return;
-    const labels = component.noteIdOptions().map(n => component.noteLabel(n));
+    const labels = component.noteIdOptions().map((n) => component.noteLabel(n));
     expect(new Set(labels).size).toBe(labels.length);
   });
 
@@ -679,7 +841,7 @@ describe('PracticeComponent — melody free exploration', () => {
     component.startPractice();
     // Avança até encontrar um exercício melody
     while (component.currentExercise()?.type !== 'melody' && !component.isLastExercise()) {
-      component.currentIndex.update(i => i + 1);
+      component.currentIndex.update((i) => i + 1);
       component['resetExerciseState']();
     }
     return result;
@@ -745,7 +907,10 @@ describe('PracticeComponent — melody free exploration', () => {
     vi.useFakeTimers();
     const { component, progressSpy } = await createMelodyFixture();
     const ex = component.currentExercise() as any;
-    if (ex?.type !== 'melody') { vi.useRealTimers(); return; }
+    if (ex?.type !== 'melody') {
+      vi.useRealTimers();
+      return;
+    }
 
     // Simula recording
     component.melodyPhase.set('recording');
@@ -810,7 +975,10 @@ describe('PracticeComponent — melody free exploration', () => {
     vi.useFakeTimers();
     const { component } = await createMelodyFixture();
     const ex = component.currentExercise() as any;
-    if (ex?.type !== 'melody') { vi.useRealTimers(); return; }
+    if (ex?.type !== 'melody') {
+      vi.useRealTimers();
+      return;
+    }
 
     // Simula recording com notas perfeitas
     component.melodyPhase.set('recording');

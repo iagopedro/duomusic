@@ -7,12 +7,27 @@ import { ProgressService } from '../../core/services/progress.service';
 import { Achievement } from '../../core/models';
 
 const MOCK_ACHIEVEMENTS: Achievement[] = [
-  { id: 'a1', icon: '🏅', titleKey: 'ach.1', descriptionKey: 'ach.1.d',
-    condition: { type: 'xp', value: 100 } },
-  { id: 'a2', icon: '🔥', titleKey: 'ach.2', descriptionKey: 'ach.2.d',
-    condition: { type: 'streak', value: 3 } },
-  { id: 'a3', icon: '⭐', titleKey: 'ach.3', descriptionKey: 'ach.3.d',
-    condition: { type: 'exercises_done', value: 10 } },
+  {
+    id: 'a1',
+    icon: '🏅',
+    titleKey: 'ach.1',
+    descriptionKey: 'ach.1.d',
+    condition: { type: 'xp', value: 100 },
+  },
+  {
+    id: 'a2',
+    icon: '🔥',
+    titleKey: 'ach.2',
+    descriptionKey: 'ach.2.d',
+    condition: { type: 'streak', value: 3 },
+  },
+  {
+    id: 'a3',
+    icon: '⭐',
+    titleKey: 'ach.3',
+    descriptionKey: 'ach.3.d',
+    condition: { type: 'exercises_done', value: 10 },
+  },
 ];
 
 describe('AchievementsComponent', () => {
@@ -63,7 +78,7 @@ describe('AchievementsComponent', () => {
     expect(component.isEarned('a2')).toBe(false);
   });
 
-  it('percentage should be NaN when no achievements exist', async () => {
+  it('shows zero progress when no achievements exist', async () => {
     // Recria com lista vazia
     await TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
@@ -78,6 +93,9 @@ describe('AchievementsComponent', () => {
     const comp = fixture.componentInstance;
     fixture.detectChanges();
     expect(comp.total()).toBe(0);
-    expect(comp.percentage()).toBeNaN();
+    expect(comp.percentage()).toBe(0);
+    expect(
+      fixture.nativeElement.querySelector('[role="progressbar"]').getAttribute('aria-valuenow'),
+    ).toBe('0');
   });
 });

@@ -1,10 +1,26 @@
 @if (visible()) {
   <div class="piano-tutorial__overlay" [@overlay] (click)="confirm()">
-    <div class="piano-tutorial__modal" [@modal] (click)="$event.stopPropagation()">
+    <div
+      class="piano-tutorial__modal"
+      [@modal]
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="piano-tutorial-title"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      (keydown.escape)="confirm()"
+    >
       <div class="piano-tutorial__header">
-        <h2 class="piano-tutorial__title">{{ i18n.t('piano.tutorial.title') }}</h2>
+        <h2 id="piano-tutorial-title" class="piano-tutorial__title">
+          {{ i18n.t('piano.tutorial.title') }}
+        </h2>
         @if (closeButton()) {
-          <button class="piano-tutorial__close-btn" (click)="confirm()" [attr.aria-label]="'Fechar'">
+          <button
+            class="piano-tutorial__close-btn"
+            (click)="confirm()"
+            [attr.aria-label]="'Fechar'"
+          >
             <span aria-hidden="true">✕</span>
           </button>
         }
@@ -15,7 +31,10 @@
 
       <div class="piano-tutorial__key-grid">
         @for (key of allKeys; track key.note) {
-          <div class="piano-tutorial__key-item" [class.piano-tutorial__key-item--black]="key.isBlack">
+          <div
+            class="piano-tutorial__key-item"
+            [class.piano-tutorial__key-item--black]="key.isBlack"
+          >
             <kbd class="piano-tutorial__kbd">{{ key.keyboardKey.toUpperCase() }}</kbd>
             <span class="piano-tutorial__arrow">→</span>
             <span class="piano-tutorial__note">{{ key.note }}</span>
@@ -28,7 +47,8 @@
           style="width: 100%"
           (clicked)="confirm()"
           [ariaLabel]="i18n.t('piano.tutorial.confirm')"
-        >{{ i18n.t('piano.tutorial.confirm') }}</app-primary-button>
+          >{{ i18n.t('piano.tutorial.confirm') }}</app-primary-button
+        >
       }
     </div>
   </div>

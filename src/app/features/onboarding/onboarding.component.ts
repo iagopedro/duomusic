@@ -1,6 +1,4 @@
-import {
-  Component, ChangeDetectionStrategy, signal, computed, inject,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { trigger, transition, style, animate, query, group } from '@angular/animations';
@@ -12,8 +10,7 @@ import { GlassPanelComponent } from '../../shared/components/glass-panel/glass-p
 interface OnboardingStep {
   titleKey: string;
   descKey: string;
-  illustration: string; // emoji ou ícone
-  gradient: string;
+  illustration: string;
 }
 
 @Component({
@@ -24,26 +21,42 @@ interface OnboardingStep {
     trigger('slideIn', [
       transition(':increment', [
         group([
-          query(':leave', [
-            style({ position: 'absolute', width: '100%' }),
-            animate('300ms ease-in', style({ transform: 'translateX(-100%)', opacity: 0 })),
-          ], { optional: true }),
-          query(':enter', [
-            style({ transform: 'translateX(100%)', opacity: 0 }),
-            animate('300ms ease-out', style({ transform: 'translateX(0)', opacity: 1 })),
-          ], { optional: true }),
+          query(
+            ':leave',
+            [
+              style({ position: 'absolute', width: '100%' }),
+              animate('300ms ease-in', style({ transform: 'translateX(-100%)', opacity: 0 })),
+            ],
+            { optional: true },
+          ),
+          query(
+            ':enter',
+            [
+              style({ transform: 'translateX(100%)', opacity: 0 }),
+              animate('300ms ease-out', style({ transform: 'translateX(0)', opacity: 1 })),
+            ],
+            { optional: true },
+          ),
         ]),
       ]),
       transition(':decrement', [
         group([
-          query(':leave', [
-            style({ position: 'absolute', width: '100%' }),
-            animate('300ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 })),
-          ], { optional: true }),
-          query(':enter', [
-            style({ transform: 'translateX(-100%)', opacity: 0 }),
-            animate('300ms ease-out', style({ transform: 'translateX(0)', opacity: 1 })),
-          ], { optional: true }),
+          query(
+            ':leave',
+            [
+              style({ position: 'absolute', width: '100%' }),
+              animate('300ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 })),
+            ],
+            { optional: true },
+          ),
+          query(
+            ':enter',
+            [
+              style({ transform: 'translateX(-100%)', opacity: 0 }),
+              animate('300ms ease-out', style({ transform: 'translateX(0)', opacity: 1 })),
+            ],
+            { optional: true },
+          ),
         ]),
       ]),
     ]),
@@ -60,20 +73,17 @@ export class OnboardingComponent {
     {
       titleKey: 'onboarding.step1.title',
       descKey: 'onboarding.step1.desc',
-      illustration: '🎵',
-      gradient: 'linear-gradient(160deg, #0f2027 0%, #1a3a2a 50%, #11251c 100%)',
+      illustration: 'piano',
     },
     {
       titleKey: 'onboarding.step2.title',
       descKey: 'onboarding.step2.desc',
-      illustration: '👂',
-      gradient: 'linear-gradient(160deg, #0d1b2a 0%, #1b2d3a 50%, #0a1520 100%)',
+      illustration: 'hearing',
     },
     {
       titleKey: 'onboarding.step3.title',
       descKey: 'onboarding.step3.desc',
-      illustration: '🏆',
-      gradient: 'linear-gradient(160deg, #1a1a2e 0%, #2a1a3e 50%, #0f0f1e 100%)',
+      illustration: 'workspace_premium',
     },
   ];
 
@@ -84,7 +94,7 @@ export class OnboardingComponent {
   readonly stepDesc = computed(() => this.i18n.tStr(this.currentStep().descKey));
 
   next(): void {
-    if (!this.isLast()) this.currentIndex.update(i => i + 1);
+    if (!this.isLast()) this.currentIndex.update((i) => i + 1);
   }
 
   goTo(index: number): void {

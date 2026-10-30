@@ -10,4 +10,5 @@ import { Achievement } from '../../../core/models';
 export class BadgeChipComponent {
   readonly achievement = input.required<Achievement>();
   readonly locked = input(false);
+  readonly detailed = input(false);
 }

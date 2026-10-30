@@ -4,7 +4,7 @@
 
 export type ChordType = 'major' | 'minor' | 'dim' | 'aug';
 export type OscillatorType = 'sine' | 'square' | 'triangle' | 'sawtooth';
-export type ExerciseType = 'rhythm' | 'interval' | 'chord' | 'note-id' | 'melody';
+export type ExerciseType = 'rhythm' | 'interval' | 'chord' | 'note-id' | 'melody' | 'theory';
 export type ModuleId = 'fundamentals' | 'intervals' | 'scales' | 'chords' | 'mixed';
 
 // ── Module ────────────────────────────────────
@@ -72,7 +72,13 @@ export interface MelodyExercise extends BaseExercise {
   bpm: number;
 }
 
-export type Exercise = RhythmExercise | IntervalExercise | ChordExercise | NoteExercise | MelodyExercise;
+export interface TheoryExercise extends BaseExercise {
+  type: 'theory';
+  options: string[];
+  answer: string;
+}
+
+export type Exercise = RhythmExercise | IntervalExercise | ChordExercise | NoteExercise | MelodyExercise | TheoryExercise;
 
 // ── Exercise Result ───────────────────────────
 export interface ExerciseResult {

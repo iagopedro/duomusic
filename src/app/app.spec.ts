@@ -9,10 +9,7 @@ describe('App (root shell)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [
-        provideRouter([]),
-        provideNoopAnimations(),
-      ],
+      providers: [provideRouter([]), provideNoopAnimations()],
     }).compileComponents();
   });
 
@@ -60,5 +57,65 @@ describe('App (root shell)', () => {
   it('navItems should contain 3 entries', () => {
     const fixture = TestBed.createComponent(App);
     expect(fixture.componentInstance.navItems.length).toBe(3);
+  });
+
+  it('keeps authentication screens free of journey navigation', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    for (const route of ['/auth/login', '/auth/register', '/offline', '/']) {
+      app.currentRoute.set(route);
+      expect(app.showNav()).toBe(false);
+    }
+  });
+
+  it('moves skip-link focus without navigating to the base URL', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const event = new MouseEvent('click', { cancelable: true });
+    const main: HTMLElement = fixture.nativeElement.querySelector('#main-content');
+    const focus = vi.spyOn(main, 'focus');
+    fixture.componentInstance.skipToContent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(focus).toHaveBeenCalledOnce();
+  });
+
+  it('respects the in-app reduced motion preference', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    const settings = TestBed.inject(SettingsService);
+    const previous = settings.settings().reduceAnimations;
+    try {
+      settings.setReduceAnimations(true);
+      expect(app.reduceMotion()).toBe(true);
+      settings.setReduceAnimations(false);
+      app.systemReduceMotion.set(true);
+      expect(app.reduceMotion()).toBe(true);
+      app.systemReduceMotion.set(false);
+      expect(app.reduceMotion()).toBe(false);
+    } finally {
+      settings.setReduceAnimations(previous);
+    }
+  });
+
+  it('reacts to system motion changes and disposes the listener', () => {
+    const listeners: Array<(event: MediaQueryListEvent) => void> = [];
+    const remove = vi.fn();
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({
+        matches: true,
+        addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) =>
+          listeners.push(listener),
+        removeEventListener: remove,
+      })),
+    );
+    try {
+      const fixture = TestBed.createComponent(App);
+      expect(fixture.componentInstance.systemReduceMotion()).toBe(true);
+      listeners[0]({ matches: false } as MediaQueryListEvent);
+      expect(fixture.componentInstance.systemReduceMotion()).toBe(false);
+      fixture.destroy();
+      expect(remove).toHaveBeenCalledWith('change', listeners[0]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

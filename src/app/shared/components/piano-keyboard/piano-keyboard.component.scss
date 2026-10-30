@@ -14,7 +14,9 @@
     max-width: 56px;
     margin-right: 3px;
 
-    &:last-child { margin-right: 0; }
+    &:last-child {
+      margin-right: 0;
+    }
 
     // Espaço extra à direita para acomodar a tecla preta sobreposta
     &--has-black {
@@ -33,14 +35,21 @@
     align-items: flex-end;
     justify-content: center;
     padding-bottom: 10px;
-    transition: background 0.1s, transform 0.08s, box-shadow 0.1s;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35), inset 0 -2px 4px rgba(0,0,0,0.1);
+    transition:
+      background 0.1s,
+      transform 0.08s,
+      box-shadow 0.1s;
+    box-shadow:
+      0 4px 8px rgba(0, 0, 0, 0.35),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 1;
     outline: none;
 
     &:focus-visible {
-      box-shadow: 0 0 0 3px var(--color-primary), 0 4px 8px rgba(0,0,0,0.35);
+      box-shadow:
+        0 0 0 3px var(--color-primary),
+        0 4px 8px rgba(0, 0, 0, 0.35);
     }
 
     &:hover:not(:disabled) {
@@ -56,26 +65,34 @@
     &--pressed {
       background: linear-gradient(180deg, #d8d8d8 0%, #c8c8c8 100%) !important;
       transform: scaleY(0.96) !important;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(0,0,0,0.2) !important;
+      box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
     }
 
     &--highlighted {
       background: linear-gradient(180deg, #fde68a 0%, #fbbf24 100%) !important;
       border-color: #f59e0b;
-      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.5), inset 0 -2px 4px rgba(0,0,0,0.1);
+      box-shadow:
+        0 4px 12px rgba(251, 191, 36, 0.5),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.1);
       animation: piano-pulse 0.7s ease-in-out infinite alternate;
     }
 
     &--selected {
       background: linear-gradient(180deg, #a5f3fc 0%, #22d3ee 100%) !important;
       border-color: #0891b2;
-      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.45), inset 0 -2px 4px rgba(0,0,0,0.1);
+      box-shadow:
+        0 4px 12px rgba(34, 211, 238, 0.45),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.1);
     }
 
     &--wrong {
       background: linear-gradient(180deg, #fca5a5 0%, #f87171 100%) !important;
       border-color: #dc2626;
-      box-shadow: 0 4px 12px rgba(248, 113, 113, 0.5), inset 0 -2px 4px rgba(0,0,0,0.1);
+      box-shadow:
+        0 4px 12px rgba(248, 113, 113, 0.5),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.1);
       animation: piano-shake 0.35s ease-in-out;
     }
   }
@@ -83,14 +100,14 @@
   &__black-key {
     position: absolute;
     top: 0;
-    right: -9px;
-    width: 18px;
+    right: -12px;
+    width: 24px;
     height: 72px;
     background: linear-gradient(180deg, #2a2a2a 0%, #111 100%);
     border-radius: 0 0 4px 4px;
     border: 1px solid #000;
     z-index: 2;
-    box-shadow: 2px 4px 6px rgba(0,0,0,0.6);
+    box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.6);
 
     &--interactive {
       cursor: pointer;
@@ -100,7 +117,9 @@
       align-items: flex-end;
       justify-content: center;
       padding-bottom: 4px;
-      transition: background 0.1s, transform 0.08s;
+      transition:
+        background 0.1s,
+        transform 0.08s;
       outline: none;
 
       &:hover:not(:disabled) {
@@ -113,14 +132,16 @@
       }
 
       &:focus-visible {
-        box-shadow: 0 0 0 2px var(--color-primary), 2px 4px 6px rgba(0,0,0,0.6);
+        box-shadow:
+          0 0 0 2px var(--color-primary),
+          2px 4px 6px rgba(0, 0, 0, 0.6);
       }
     }
 
     &--pressed {
       background: linear-gradient(180deg, #444 0%, #333 100%) !important;
       transform: scaleY(0.96);
-      box-shadow: 1px 2px 3px rgba(0,0,0,0.4) !important;
+      box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.4) !important;
     }
 
     &--highlighted {
@@ -156,7 +177,7 @@
     transform: translateX(-50%);
     font-size: var(--text-2xs);
     font-weight: 700;
-    color: var(--color-primary, #6366f1);
+    color: #186d45;
     background: rgba(255, 255, 255, 0.85);
     border-radius: 3px;
     padding: 1px 4px;
@@ -180,12 +201,23 @@
 }
 
 @keyframes piano-pulse {
-  from { box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4); }
-  to   { box-shadow: 0 4px 20px rgba(251, 191, 36, 0.8); }
+  from {
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  }
+  to {
+    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.8);
+  }
 }
 
 @keyframes piano-shake {
-  0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-4px); }
-  60%       { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  60% {
+    transform: translateX(4px);
+  }
 }
