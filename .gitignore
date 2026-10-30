@@ -38,6 +38,8 @@ test-results*.txt
 .sass-cache/
 /connect.lock
 /coverage
+/playwright-report/
+/test-results/
 /libpeerconnection.log
 testem.log
 /typings
@@ -57,4 +59,5 @@ backend/.venv/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/**/*.pyc
+tests/**/__pycache__/
 backend/.env

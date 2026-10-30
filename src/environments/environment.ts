@@ -1,3 +1,3 @@
 export const environment = {
-  apiUrl: 'https://duomusic.onrender.com',
+  apiUrl: 'http://localhost:8000/api',
 };
