@@ -1,100 +1,155 @@
-# Testes Unitários
+# Testes e regressões de interface
 
-# Testes Unitários
+A cobertura é organizada por riscos e cenários verificáveis, não por uma promessa
+de “todos os casos possíveis”. A [matriz de autenticação](auth-test-matrix.md)
+distingue cobertura executável de planejamento histórico.
 
-O DuoMusic possui **368 testes unitários no frontend** (27 arquivos, Vitest 4.1) e **219 testes no backend** (pytest), cobrindo o fluxo completo do usuário — incluindo autenticação.
+## Por que o erro `[object Object]` passou
 
-## Frontend (Vitest)
+O Angular aceitava `iago@gmail`, mas o `EmailStr` do backend rejeitava o domínio
+incompleto. O FastAPI respondia HTTP 422 com `detail` como **lista de objetos**.
+O serviço atribuía esse valor diretamente ao estado de erro: o `any` de
+`HttpErrorResponse.error` contornava a tipagem `string`. A interpolação no HTML
+então mostrava `[object Object]`.
 
-### Executar os testes
+As specs dos formulários substituíam o serviço por um mock que só emitia strings.
+Os testes de serviço não incluíam esse contrato 422; os testes de validação do
+backend verificavam o status, não o conteúdo consumido pela interface. Inspeção
+manual com uma API simulada não substituía essa integração. O deploy também não
+exigia testes.
 
-```bash
-npm test                  # executa uma vez
-npm run test:coverage     # executa com relatório de cobertura
-npm test -- --include="src/app/core/auth/**"   # filtra por glob (não usar `--run <file>`)
+Agora o teste usa uma [resposta real de validação](../tests/fixtures/auth-validation-error.json)
+e verifica **HTTP → interceptor → serviço real → DOM**. Ele falhou antes da
+correção e passa após ela. Objetos, `input`, `ctx` e mensagens internas da lista
+não são mostrados ao aluno. A API continua responsável pela validação definitiva:
+o validator local não pretende reproduzir todo o algoritmo `EmailStr`.
+
+O navegador também revelou uma falha na restauração da sessão: o serviço iniciava
+HTTP durante sua construção e o interceptor tentava injetá-lo novamente. Essa
+ordem foi corrigida e há regressão com tokens salvos, sem refresh indevido.
+
+## 1. Angular: unidades e integração
+
+```powershell
+npm test -- --watch=false
+npm test -- --watch=false --include="**/{auth-http.integration,auth.service,auth.interceptor,email.validator,login.component,register.component}.spec.ts"
+npm run test:coverage -- --watch=false
 ```
 
-### Cobertura
+Em ambientes com poucos recursos:
 
-| Arquivo de spec | Testes | O que cobre |
-|-----------------|--------|-------------|
-| `app.spec.ts` | 6 | Criação da aplicação, roteamento |
-| `auth.guard.spec.ts` | 6 | `authGuard`/`guestGuard` — redirecionamento conforme estado de autenticação |
-| `auth.interceptor.spec.ts` | 10 | Injeção do Bearer token, renovação automática em `401`, URLs públicas |
-| `auth.service.spec.ts` | 19 | Login, registro, logout, refresh, restauração de sessão, tratamento de erros |
-| `onboarding.guard.spec.ts` | 4 | Redirecionamento de rotas |
-| `i18n.service.spec.ts` | 9 | Tradução, interpolação, fallback |
-| `api.service.spec.ts` | 6 | Carga inicial de módulos/exercícios/conquistas, `backendOffline` |
-| `audio.service.spec.ts` | 16 | Síntese de som, volume, metrônomo |
-| `background-track.service.spec.ts` | 16 | Trilha sonora de fundo |
-| `progress.service.spec.ts` | 19 | XP, nível, streak, conquistas, módulos |
-| `settings.service.spec.ts` | 12 | Persistência e alteração de preferências |
-| `storage.service.spec.ts` | 10 | Leitura, escrita e remoção no localStorage |
-| `achievements.component.spec.ts` | 8 | Lista de conquistas |
-| `login.component.spec.ts` | 22 | Validação de formulário, submit, navegação, mensagens de erro |
-| `register.component.spec.ts` | 30 | Validação de formulário, confirmação de senha, submit, navegação, mensagens de erro |
-| `home.component.spec.ts` | 10 | Tela principal |
-| `offline.component.spec.ts` | 6 | Tela de modo offline |
-| `onboarding.component.spec.ts` | 12 | Fluxo de introdução |
-| `practice.component.spec.ts` | 70 | Fluxo completo de prática, exploração livre, gravação e scoring de melodia |
-| `profile.component.spec.ts` | 13 | Estatísticas e configurações do usuário |
-| `badge-chip.component.spec.ts` | 7 | Tags de conquista |
-| `glass-panel.component.spec.ts` | 6 | Projeção de conteúdo |
-| `module-card.component.spec.ts` | 12 | Card de módulo, bloqueio, clique |
-| `piano-keyboard.component.spec.ts` | 14 | Teclado interativo |
-| `piano-tutorial.component.spec.ts` | 10 | Overlay de mapeamento de teclas |
-| `primary-button.component.spec.ts` | 10 | Variantes, estados, evento de clique |
-| `xp-bar.component.spec.ts` | 5 | Barra de progresso visual |
-
-### Convenções importantes
-
-O projeto é **zoneless** (sem `zone.js`) — `fakeAsync`/`tick` **não funcionam** aqui. Testes assíncronos (ex.: `AuthService`, `authInterceptor`) usam `async/await` com um helper `flushPromises()`:
-
-```typescript
-const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
-await flushPromises();
+```powershell
+$env:VITEST_MAX_WORKERS='1'
+$env:NG_BUILD_MAX_WORKERS='2'
+npm test -- --watch=false
 ```
 
-**Componentes OnPush** exigem `setInput()` para alterar entradas em testes:
+- [Integração de autenticação](../src/app/features/auth/auth-http.integration.spec.ts):
+  status HTTP, corpos variados, mensagens acessíveis, loading, reenvio, ausência
+  de navegação/salvamento no erro, limpeza entre formulários e restauração.
+- [Matriz de respostas](../tests/fixtures/auth-error-cases.ts): compartilhada pelo
+  teste Angular e pelo navegador; não mocka o normalizador de produção.
+- [Email](../src/app/core/auth/email.validator.spec.ts): domínio incompleto,
+  formatos inválidos, subdomínio, `+`, hífen e campo obrigatório.
+- As specs existentes de componentes, progresso, jornada, áudio, guards e
+  interceptor continuam cobrindo seus comportamentos específicos.
 
-```typescript
-fixture.componentRef.setInput('label', 'novo valor');
-fixture.detectChanges();
+O projeto é **zoneless**: use `async/await`, `fixture.whenStable()` e ferramentas
+Vitest; não use `fakeAsync/tick` sem Zone.js. Em componentes OnPush, altere inputs
+com `fixture.componentRef.setInput()`. Um teste que usa mock do serviço é teste
+de bindings/componente, não integração HTTP.
+
+## 2. Contrato FastAPI/schema
+
+Com as dependências de desenvolvimento do backend instaladas:
+
+```powershell
+python -m pip install -r backend\requirements-dev.txt
+python -m pytest tests\contracts -o pythonpath=backend -q
 ```
 
-**Mock de construtores de classe** (Vitest v4) exige `function` keyword:
+O [teste de contrato](../tests/contracts/test_auth_validation.py) usa os schemas
+reais e a serialização de validação do FastAPI em uma aplicação mínima. Compara
+o JSON 422 integral com o fixture usado pelo frontend e verifica limites de
+senha/nome. Não inicia o lifespan do aplicativo principal, não cria usuários e
+não acessa o banco. Não substitui os testes dos routers, JWT ou persistência:
 
-```typescript
-(window as any).AudioContext = vi.fn().mockImplementation(function() {
-  return mockCtx;
-});
+```powershell
+Set-Location backend
+python -m pytest tests\test_auth_routers.py -q
 ```
 
-## Backend (pytest)
+## 3. Navegador e regressão visual (Playwright/Chromium)
 
-### Executar os testes
-
-```bash
-cd backend
-.venv\Scripts\activate       # Windows — ou `source .venv/bin/activate` no Linux/macOS
-pytest                       # executa toda a suíte
-pytest --collect-only -q     # lista os testes sem executá-los
-pytest tests/test_auth_routers.py  # executa apenas um arquivo
+```powershell
+npm ci
+npx playwright install chromium
+npm run test:e2e:types
+npm run test:e2e
+# Um cenário ou grupo:
+npm run test:e2e -- --grep "FastAPI 422 real"
 ```
 
-### Cobertura
+A [configuração](../playwright.config.ts) inicia e encerra um servidor próprio em
+`127.0.0.1:4300`; a porta deve estar livre. Não reutiliza os servidores de
+desenvolvimento em 4200/8000. Cada teste recebe contexto/localStorage isolados.
+As requisições de API são interceptadas, sem substituir serviços Angular.
+Requisições não previstas e erros JavaScript não tratados fazem o teste falhar.
+Catálogos vêm dos dados versionados do projeto; credenciais são sintéticas.
 
-| Arquivo de teste | Testes | O que cobre |
-|-------------------|--------|-------------|
-| `test_auth_password.py` | 9 | Hash e verificação de senha (bcrypt, truncamento, unicode) |
-| `test_auth_jwt.py` | 14 | Criação/decodificação de tokens, expiração, assinatura inválida |
-| `test_auth_user_service.py` | 25 | CRUD de usuários, autenticação, refresh tokens |
-| `test_auth_routers.py` | 29 | Endpoints `/auth/*` (registro, login, refresh, logout, perfil) |
-| `test_config.py` | 7 | Carregamento de configurações (`Settings`) |
-| `test_models.py` | 27 | Modelos Pydantic do conteúdo educacional |
-| `test_prompts.py` | 14 | Templates de prompt do módulo LLM |
-| `test_routers.py` | 39 | Endpoints de módulos, exercícios e conquistas |
-| `test_services.py` | 30 | Serviços de módulos, exercícios e conquistas |
-| `test_utils_music.py` | 25 | Conversão nota↔frequência |
+Cobertura persistente:
 
-Os testes de autenticação usam um banco **SQLite em memória** isolado por teste (fixture em `conftest.py`), garantindo que nenhum teste dependa de estado compartilhado.
+- Login e cadastro: matriz de erros, teclado, validação local, senha visível,
+  limites, confirmação, loading, submit duplicado, retry, sucesso e reload.
+- **48 imagens de referência**: os dois formulários, temas claro/escuro,
+  larguras 320/390/768/1440, estados vazio/inválido/422. Texto do erro nunca é
+  mascarado; assertions semânticas precedem a comparação de pixels.
+- Texto longo e marcação HTML tratados como texto, sem overflow horizontal.
+- Contraste mínimo 4,5:1 nos principais textos/controles ativos da autenticação.
+- Movimento reduzido pelo sistema e pela preferência do perfil.
+- Smokes: guards, onboarding, navegação, bloqueio de lições, configurações
+  persistidas, tutorial, prática com erro/revisão/recompensa e progresso salvo;
+  superfícies de ritmo, melodia, intervalos e acordes; indisponibilidade da API.
+- [Interface de aprendizado](../tests/e2e/learning-ui.spec.ts): jornada,
+  conquistas, perfil e prática nos dois temas, em 320/390/768/1440 px;
+  progresso acessível, alvos de navegação de pelo menos 44 px, cápsula sem
+  sobreposição, ausência de overflow, contraste de textos/CTA e das duas
+  extremidades do destaque verde. Também verifica teclado e ausência de animações
+  ativas de rota/prática com movimento reduzido pelo sistema/perfil. Capturas para
+  inspeção são salvas em `test-results`;
+  não são usadas como comparações de pixels.
+
+### Revisar imagens, não aceitar diferenças cegamente
+
+As [referências](../tests/e2e/baselines/win32) foram geradas em Windows/Chromium.
+A CI usa Windows 2025, versão Playwright fixada, relógio e viewport controlados.
+O CDN de fontes é desabilitado **nos testes** para comparar o fallback de fontes
+do sistema sem dependência de rede; fontes remotas e renderização em outros
+sistemas exigem inspeção separada.
+
+```powershell
+npm run test:e2e:update -- --grep "empty, invalid and API error"
+npm run test:e2e
+```
+
+Revise cada imagem alterada, mensagens e layout antes de versionar a referência.
+Não atualize baselines para “resolver” testes quebrados. Em outro sistema,
+gere/revise as referências daquela plataforma ou use o mesmo ambiente da CI.
+O comando normal não atualiza snapshots. Há tolerância de apenas 60 pixels por
+imagem; isso não substitui as verificações exatas de texto, estado e geometria.
+
+Falhas geram screenshot, trace e relatório HTML em `test-results` e
+`playwright-report` (ignorados pelo Git). A CI retém essas evidências por 7 dias.
+
+## CI e limites
+
+O [workflow de testes](../.github/workflows/test.yml) roda em pull requests e é
+pré-requisito do [deploy](../.github/workflows/deploy.yml). Valida unidades,
+integração, tipos E2E, navegador, contrato e build. Não atualiza imagens na CI.
+
+A suíte não equivale a E2E contra backend/banco reais. Ainda precisam de
+validação específica: Firefox/WebKit, leitores de tela, fontes remotas,
+dispositivos e latência de áudio/Bluetooth, scoring temporal no navegador,
+geração LLM, sessões prolongadas e todas as combinações de progresso salvo.
+Um novo bug deve gerar um cenário mínimo **vermelho antes do fix**, no nível
+onde escapou, e atualizar a matriz. Quantidade de testes não prova completude.

@@ -110,12 +110,13 @@ Além disso, é possível configurar *build filters* para que um push que só mu
 DUOMUSIC_DATABASE_URL=postgresql+asyncpg://user:pass@host/dbname
 DUOMUSIC_JWT_SECRET_KEY=<gerar-chave-segura-32-chars>
 DUOMUSIC_DEBUG=false
-DUOMUSIC_CORS_ORIGINS=["https://seu-frontend.com"]
+DUOMUSIC_CORS_ORIGINS=["https://iagopedro.github.io"]
 DUOMUSIC_LLM_ENABLED=false
 DUOMUSIC_LLM_API_KEY=<sua-chave-gemini-se-usar>
 ```
 
 > **Importante:** Use a Internal Database URL do PostgreSQL criado, mas troque `postgresql://` por `postgresql+asyncpg://`
+> Para o GitHub Pages, a origem é apenas `https://iagopedro.github.io`; não inclua o caminho `/duomusic/`.
 
 5. Clique em **Create Web Service**
 
@@ -164,7 +165,7 @@ export const environment = {
 | `DUOMUSIC_JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do access token | `30` (padrão) |
 | `DUOMUSIC_JWT_REFRESH_TOKEN_EXPIRE_DAYS` | Expiração do refresh token | `7` (padrão) |
 | `DUOMUSIC_DEBUG` | Modo debug | `false` (produção) |
-| `DUOMUSIC_CORS_ORIGINS` | Lista de origens permitidas | `["https://app.duomusic.com"]` |
+| `DUOMUSIC_CORS_ORIGINS` | Lista de origens permitidas | `["https://iagopedro.github.io"]` |
 | `DUOMUSIC_LLM_ENABLED` | Habilitar geração por LLM | `true` ou `false` |
 | `DUOMUSIC_LLM_PROVIDER` | Provedor LLM | `gemini` |
 | `DUOMUSIC_LLM_API_KEY` | Chave da API do LLM | `AIza...` |
