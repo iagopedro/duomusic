@@ -1,0 +1,53 @@
+name: Interface and auth regression tests
+
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: windows-2025
+    env:
+      VITEST_MAX_WORKERS: '1'
+      NG_BUILD_MAX_WORKERS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test -- --watch=false
+      - run: npm run test:e2e:types
+      - run: npx playwright install chromium
+      - run: npm run test:e2e
+      - run: npm run build
+      - name: Browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-regression-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  api-contract:
+    runs-on: ubuntu-latest
+    env:
+      DUOMUSIC_DATABASE_URL: 'sqlite+aiosqlite:///:memory:'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - run: python -m pytest tests/contracts -o pythonpath=backend -q
