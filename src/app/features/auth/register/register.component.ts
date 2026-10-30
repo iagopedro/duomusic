@@ -16,6 +16,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { emailValidator } from '../../../core/auth/email.validator';
 import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
@@ -34,9 +35,9 @@ export class RegisterComponent {
 
   readonly form: FormGroup = this.fb.group(
     {
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, emailValidator]],
       displayName: ['', [Validators.maxLength(50)]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: this.passwordMatchValidator }
@@ -47,7 +48,12 @@ export class RegisterComponent {
   readonly showPassword = signal(false);
   readonly showConfirmPassword = signal(false);
 
+  constructor() {
+    this.authService.clearError();
+  }
+
   async onSubmit(): Promise<void> {
+    if (this.isLoading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

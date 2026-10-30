@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { I18nService } from '../i18n/i18n.service';
 import { StorageService } from '../storage/storage.service';
 import {
   AuthState,
@@ -16,11 +17,16 @@ import {
 const TOKENS_KEY = 'duomusic_tokens';
 const API_URL = environment.apiUrl;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly storage = inject(StorageService);
   private readonly router = inject(Router);
+  private readonly i18n = inject(I18nService);
 
   private readonly _state = signal<AuthState>({ status: 'idle' });
   readonly state = this._state.asReadonly();
@@ -41,6 +47,12 @@ export class AuthService {
     return state.status === 'error' ? state.error : null;
   });
 
+  clearError(): void {
+    if (this._state().status === 'error') {
+      this._state.set({ status: 'unauthenticated' });
+    }
+  }
+
   /** Promise resolvida quando o estado inicial de autenticação é conhecido. Usada no APP_INITIALIZER para evitar que os guards rodem com o status 'idle'. */
   readonly initialized: Promise<void>;
 
@@ -58,6 +70,9 @@ export class AuthService {
       this._state.set({ status: 'unauthenticated' });
       return;
     }
+
+    // O interceptor injeta este servico; a primeira requisicao deve esperar o construtor terminar.
+    await Promise.resolve();
 
     try {
       await this.loadCurrentUser();
@@ -191,18 +206,61 @@ export class AuthService {
    * Trata erros de autenticação.
    */
   private handleAuthError(error: unknown): void {
-    let message = 'Erro desconhecido';
+    let message = this.i18n.t('auth.error.unexpected');
 
     if (error instanceof HttpErrorResponse) {
-      if (error.status === 401) {
-        message = 'Email ou senha incorretos';
+      if (error.status === 0) {
+        message = this.i18n.t('auth.error.network');
+      } else if (error.status === 401) {
+        message = this.i18n.t('auth.error.credentials');
+      } else if (error.status === 403) {
+        message = this.i18n.t('auth.error.forbidden');
       } else if (error.status === 409) {
-        message = 'Este email já está cadastrado';
-      } else if (error.error?.detail) {
-        message = error.error.detail;
+        message = this.i18n.t('auth.error.duplicate');
+      } else if (error.status === 429) {
+        message = this.i18n.t('auth.error.rateLimit');
+      } else if (error.status >= 500) {
+        message = this.i18n.t('auth.error.server');
+      } else {
+        const body: unknown = error.error;
+        const detail = isRecord(body) ? body['detail'] : undefined;
+        if (typeof detail === 'string' && detail.trim()) {
+          message = detail.trim();
+        } else if (error.status === 422) {
+          message = this.validationErrorMessage(detail);
+        }
       }
     }
 
     this._state.set({ status: 'error', error: message });
+  }
+
+  private validationErrorMessage(detail: unknown): string {
+    const fallback = this.i18n.t('auth.error.validation');
+    if (!Array.isArray(detail) || detail.length === 0) return fallback;
+
+    const messages = detail.map((item: unknown) => {
+      if (!isRecord(item) || !Array.isArray(item['loc'])) return fallback;
+      const field: unknown = item['loc'][item['loc'].length - 1];
+      const type = item['type'];
+      let label: string;
+      if (field === 'email') label = this.i18n.t('auth.email');
+      else if (field === 'password') label = this.i18n.t('auth.password');
+      else if (field === 'displayName' || field === 'display_name') {
+        label = this.i18n.t('auth.displayName');
+      } else return fallback;
+
+      let message = this.i18n.t('auth.error.field');
+      if (type === 'missing') message = this.i18n.t('validation.required');
+      else if (field === 'email') message = this.i18n.t('validation.email');
+      else if (type === 'string_too_short' && field === 'password') {
+        message = this.i18n.t('validation.minLength', { min: 8 });
+      } else if (type === 'string_too_long') {
+        message = this.i18n.t('validation.maxLength', { max: field === 'password' ? 128 : 50 });
+      }
+      // Nao exibir input, ctx ou msg: podem conter senhas e detalhes internos.
+      return `${label}: ${message}`;
+    });
+    return [...new Set(messages)].join('\n');
   }
 }

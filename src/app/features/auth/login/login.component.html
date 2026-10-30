@@ -1,5 +1,6 @@
 <div class="auth-container">
   <div class="auth-card">
+    <div class="auth-brand" aria-label="DuoMusic"><span>duo</span>music</div>
     <div class="auth-header">
       <h1 class="auth-title">{{ i18n.t('auth.login.title') }}</h1>
       <p class="auth-subtitle">{{ i18n.t('auth.login.subtitle') }}</p>
@@ -7,7 +8,7 @@
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
       @if (error()) {
-        <div class="error-banner">
+        <div class="error-banner" role="alert">
           {{ error() }}
         </div>
       }
@@ -19,10 +20,12 @@
           id="email"
           formControlName="email"
           autocomplete="email"
+          [attr.aria-invalid]="!!getErrorMessage('email')"
+          [attr.aria-describedby]="getErrorMessage('email') ? 'email-error' : null"
           [class.invalid]="form.get('email')?.invalid && form.get('email')?.touched"
         />
         @if (getErrorMessage('email')) {
-          <span class="field-error">{{ getErrorMessage('email') }}</span>
+          <span id="email-error" class="field-error">{{ getErrorMessage('email') }}</span>
         }
       </div>
 
@@ -34,6 +37,8 @@
             id="password"
             formControlName="password"
             autocomplete="current-password"
+            [attr.aria-invalid]="!!getErrorMessage('password')"
+            [attr.aria-describedby]="getErrorMessage('password') ? 'password-error' : null"
             [class.invalid]="form.get('password')?.invalid && form.get('password')?.touched"
           />
           <button
@@ -42,21 +47,18 @@
             (click)="togglePasswordVisibility()"
             [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
           >
-            {{ showPassword() ? '🙈' : '👁️' }}
+            {{ i18n.t(showPassword() ? 'auth.hide' : 'auth.show') }}
           </button>
         </div>
         @if (getErrorMessage('password')) {
-          <span class="field-error">{{ getErrorMessage('password') }}</span>
+          <span id="password-error" class="field-error">{{ getErrorMessage('password') }}</span>
         }
       </div>
 
-      <button
-        type="submit"
-        class="submit-button"
-        [disabled]="isLoading() || form.invalid"
-      >
+      <button type="submit" class="submit-button" [disabled]="isLoading() || form.invalid">
         @if (isLoading()) {
-          <span class="spinner"></span>
+          <span class="spinner" aria-hidden="true"></span>
+          <span role="status">{{ i18n.t('auth.loading') }}</span>
         } @else {
           {{ i18n.t('auth.login.submit') }}
         }

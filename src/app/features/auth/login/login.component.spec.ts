@@ -31,6 +31,7 @@ function makeAuthServiceSpy() {
     isLoading: signal(false),
     error: signal<string | null>(null),
     login: vi.fn().mockResolvedValue(true),
+    clearError: vi.fn(),
   };
 }
 
@@ -114,6 +115,11 @@ describe('LoginComponent', () => {
   });
 
   describe('Form validation', () => {
+    it('rejects the screenshot email with an incomplete domain', () => {
+      component.form.patchValue({ email: 'iago@gmail', password: 'synthetic-password' });
+      expect(component.form.get('email')?.hasError('email')).toBe(true);
+      expect(component.form.valid).toBe(false);
+    });
     it('should require email', () => {
       const email = component.form.get('email');
       email?.setValue('');
@@ -269,7 +275,7 @@ describe('LoginComponent', () => {
     });
   });
 
-  describe('AuthService integration', () => {
+  describe('AuthService signal bindings (mocked)', () => {
     it('should expose isLoading from AuthService', () => {
       expect(component.isLoading()).toBe(false);
 

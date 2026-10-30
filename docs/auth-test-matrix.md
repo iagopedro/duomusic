@@ -1,7 +1,44 @@
 # Test Matrix: Autenticação DuoMusic
 
-Este documento lista todos os casos de teste planejados para o sistema de autenticação.
-Use como checklist durante a implementação.
+## Regressões executáveis de interface
+
+O incidente `[object Object]` mostrou que um mock contendo apenas mensagens string
+não verifica o contrato da API. A tabela abaixo aponta a cobertura implementada;
+o checklist histórico mais abaixo **não representa testes executados**.
+
+| Risco/cenário | Cobertura executável |
+|---|---|
+| Email `iago@gmail` aceito localmente e rejeitado pelo backend | Validator compartilhado, componentes, contrato FastAPI, navegador e snapshots inválidos |
+| HTTP 422 com lista real de validação | Mesmo fixture JSON no contrato, integração HTTP/interceptor/serviço/DOM e Chromium |
+| 401, 403, 409, 429, 500, 503 e falha de rede | Matriz parametrizada em login e cadastro, Angular e navegador |
+| `detail` string/lista/objeto/número/booleano/nulo/vazio/ausente e itens malformados | Mensagem string não vazia, sem coerção de objetos |
+| Múltiplos campos, repetição, campo/tipo desconhecido | Tradução por campo, deduplicação e orientação genérica; `input`/`ctx` não expostos |
+| HTTP lento, reenvio, erro seguido de retry | Uma requisição em voo, estado acessível, botão reabilitado e erro limpo |
+| Falha seguida de troca login/cadastro | Erro anterior não aparece no formulário intocado |
+| Login/cadastro com sucesso e restauração | Navegação, tokens salvos e reload; interceptor real sem refresh indevido |
+| Senha 7/8/128/129, nome 50/51, confirmação divergente | Limites de schema e validação de formulário/navegador |
+| Teclado, foco e campo inválido | Tab/Enter, mostrar/ocultar senha, `aria-invalid`, `aria-describedby`, alert/status |
+| Contraste de autenticação | Luminância calculada no navegador, mínimo 4,5:1 nos textos/controles ativos em ambos os temas |
+| Responsividade/temas | 320, 390, 768 e 1440 px; claro/escuro; vazio, inválido e erro 422 |
+| Mensagem longa/HTML em mensagem | Quebra de texto sem overflow, HTML não interpretado |
+| Movimento reduzido | Preferência do sistema e do perfil verificadas no spinner |
+| Jornada após login | Smokes de onboarding, prática, recompensa, persistência e navegação |
+
+Fontes executáveis:
+- [Matriz de respostas](../tests/fixtures/auth-error-cases.ts)
+- [Integração Angular](../src/app/features/auth/auth-http.integration.spec.ts)
+- [Contrato](../tests/contracts/test_auth_validation.py)
+- [Navegador](../tests/e2e/auth.spec.ts), [visual](../tests/e2e/auth.visual.spec.ts)
+  e [jornada](../tests/e2e/journey.spec.ts)
+
+Veja [execução, causa raiz e limites](testing.md). Ainda não há garantia de todas
+as combinações, todos os navegadores ou integração E2E com infraestrutura real.
+
+## Checklist histórico de planejamento (não auditado nesta correção)
+
+Os itens abaixo foram preservados como backlog. As marcações antigas não
+certificam ausência ou presença de implementação, e alguns cenários podem
+descrever comportamento ainda não suportado pelo produto.
 
 ---
 

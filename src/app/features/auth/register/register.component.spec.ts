@@ -33,6 +33,7 @@ function makeAuthServiceSpy() {
     isLoading: signal(false),
     error: signal<string | null>(null),
     register: vi.fn().mockResolvedValue(true),
+    clearError: vi.fn(),
   };
 }
 
@@ -126,6 +127,10 @@ describe('RegisterComponent', () => {
   });
 
   describe('Form validation - Email', () => {
+    it('rejects email domains without a dot', () => {
+      component.form.get('email')?.setValue('iago@gmail');
+      expect(component.form.get('email')?.hasError('email')).toBe(true);
+    });
     it('should require email', () => {
       const email = component.form.get('email');
       email?.setValue('');
@@ -373,7 +378,7 @@ describe('RegisterComponent', () => {
     });
   });
 
-  describe('AuthService integration', () => {
+  describe('AuthService signal bindings (mocked)', () => {
     it('should expose isLoading from AuthService', () => {
       expect(component.isLoading()).toBe(false);
 
