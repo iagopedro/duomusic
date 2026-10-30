@@ -24,11 +24,11 @@
       <div class="offline__actions">
         <app-primary-button
           size="lg"
-          [disabled]="isRetrying"
+          [disabled]="isRetrying()"
           (clicked)="retry()"
           ariaLabel="Tentar novamente"
         >
-          @if (isRetrying) {
+          @if (isRetrying()) {
             <mat-icon class="offline__spinner" aria-hidden="true">refresh</mat-icon>
             Reconectando...
           } @else {
@@ -37,6 +37,14 @@
           }
         </app-primary-button>
       </div>
+
+      <p class="offline__status" role="status">
+        @if (isRetrying()) {
+          Verificando a conexão com o servidor...
+        } @else if (retryFailed()) {
+          O servidor ainda não respondeu. Tente novamente em alguns instantes.
+        }
+      </p>
     </div>
   </app-glass-panel>
 </div>

@@ -83,6 +83,35 @@ describe('ApiService', () => {
 
       expect(service.backendOffline()).toBe(true);
     });
+
+    it('should clear backendOffline when a later attempt succeeds', async () => {
+      const failed = service.initialize();
+      httpMock.expectOne(`${environment.apiUrl}/modules`).error(new ProgressEvent('error'));
+      httpMock.expectOne(`${environment.apiUrl}/exercises`).error(new ProgressEvent('error'));
+      httpMock.expectOne(`${environment.apiUrl}/achievements`).error(new ProgressEvent('error'));
+      await failed;
+      expect(service.backendOffline()).toBe(true);
+
+      const retried = service.initialize();
+      httpMock.expectOne(`${environment.apiUrl}/modules`).flush(mockModules);
+      httpMock.expectOne(`${environment.apiUrl}/exercises`).flush(mockExercises);
+      httpMock.expectOne(`${environment.apiUrl}/achievements`).flush(mockAchievements);
+      await retried;
+
+      expect(service.backendOffline()).toBe(false);
+      expect(service.modules().length).toBe(2);
+    });
+
+    it('should reuse an in-flight request instead of duplicating it', async () => {
+      const first = service.initialize();
+      const second = service.initialize();
+
+      expect(second).toBe(first);
+      httpMock.expectOne(`${environment.apiUrl}/modules`).flush(mockModules);
+      httpMock.expectOne(`${environment.apiUrl}/exercises`).flush(mockExercises);
+      httpMock.expectOne(`${environment.apiUrl}/achievements`).flush(mockAchievements);
+      await first;
+    });
   });
 
   describe('getExercisesForModule()', () => {

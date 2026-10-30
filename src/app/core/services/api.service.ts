@@ -18,8 +18,17 @@ export class ApiService {
   readonly achievements = this._achievements.asReadonly();
   readonly backendOffline = this._backendOffline.asReadonly();
 
-  /** Carrega todos os dados do backend. Chamado no APP_INITIALIZER. */
-  async initialize(): Promise<void> {
+  private pendingInitialize: Promise<void> | null = null;
+
+  /** Carrega todos os dados do backend. Chamado no APP_INITIALIZER e ao reconectar. */
+  initialize(): Promise<void> {
+    this.pendingInitialize ??= this.loadCatalog().finally(() => {
+      this.pendingInitialize = null;
+    });
+    return this.pendingInitialize;
+  }
+
+  private async loadCatalog(): Promise<void> {
     try {
       const [modules, exercises, achievements] = await Promise.all([
         firstValueFrom(this.http.get<Module[]>(`${environment.apiUrl}/modules`)),
@@ -29,6 +38,7 @@ export class ApiService {
       this._modules.set(modules);
       this._exercises.set(exercises);
       this._achievements.set(achievements);
+      this._backendOffline.set(false);
     } catch {
       this._backendOffline.set(true);
     }
